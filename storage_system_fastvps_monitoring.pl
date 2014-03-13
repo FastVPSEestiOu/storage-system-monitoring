@@ -11,6 +11,7 @@ Pavel Odintsov <odintsov@fastvps.ee>
 # Добавить выгрузку информации по Физическим Дискам: 
 # megacli -PDList -Aall
 # arcconf getconfig 1 pd
+# Перенести исключение ploop на этап идентификации дисковых устройств
 
 use strict;
 use warnings;
