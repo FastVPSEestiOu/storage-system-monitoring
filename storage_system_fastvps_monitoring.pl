@@ -7,6 +7,11 @@ Pavel Odintsov <odintsov@fastvps.ee>
 
 =cut
 
+# TODO
+# Добавить выгрузку информации по Физическим Дискам: 
+# megacli -PDList -Aall
+# arcconf getconfig 1 pd
+
 use strict;
 use warnings;
 

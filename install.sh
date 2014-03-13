@@ -230,3 +230,4 @@ install_monitoring_script
 # Periodic smartd tests
 start_smartd_tests
 
+echo "Please call command storage_system_fastvps_monitoring.pl and check it output manually"
