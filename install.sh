@@ -5,21 +5,25 @@
 # Если у Вас есть вопросы по работе данной системы, рекомендуем обратиться по адресам:
 # - https://github.com/FastVPSEestiOu/storage-system-monitoring
 # - https://bill2fast.com (через тикет систему)
+#
 
 # Данные пакеты обязательны к установке, так как используются скриптом мониторинга
 DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libfile-spec-perl"
 CENTOS_DEPS="wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl"
 
-GITHUB_FASTVPS_URL="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/"
+# init.d script для smartd
+SMARTD_INIT_DEBIAN=/etc/init.d/smartmontools
+SMARTD_INIT_CENTOS=/etc/init.d/smartd
+
+GITHUB_FASTVPS_URL="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring"
 
 # Diag utilities repo
-DIAG_UTILITIES_REPO="https://github.com/FastVPSEestiOu/........"
-# utilities have suffix of ARCH, i.e. arcconf32 or megacli64
-ADAPTEC_UTILITY=arcconf
-LSI_UTILITY=megacli
+DIAG_UTILITIES_REPO="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools"
+
+MONITORING_SCRIPT_NAME="storage_system_fastvps_monitoring.pl"
 
 # Monitoring script URL
-MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/storage_system_fastvps_monitoring.pl"
+MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/$MONITORING_SCRIPT_NAME"
 
 # Monitoring CRON file
 CRON_FILE=/etc/cron.hourly/storage-system-monitoring-fastvps
@@ -36,10 +40,6 @@ SMARTD_COMMAND="# smartd.conf by FastVPS
 
 ARCH=
 DISTRIB=
-
-# init.d script of smartd
-SMARTD_INIT_DEBIAN=/etc/init.d/smartmontools
-SMARTD_INIT_CENTOS=/etc/init.d/smartd
 
 #
 # Functions
@@ -72,12 +72,16 @@ check_n_install_centos_deps()
 # Проверяем наличие аппаратный RAID контроллеров и в случае наличия устанавливаем ПО для их мониторинга
 check_n_install_diag_tools()
 {
+    # utilities have suffix of ARCH, i.e. arcconf32 or megacli64
+    ADAPTEC_UTILITY=arcconf
+    LSI_UTILITY=megacli
+
     lsi_raid=0
     adaptec_raid=0
 
     parted_diag=`parted -mls`
 
-    echo "Checking hardware for LSI or Adaptec raids..."
+    echo "Checking hardware for LSI or Adaptec RAID controllers..."
     if [ -n "`echo $parted_diag | grep -i adaptec`" ]
     then
         echo "Found Adaptec raid"
@@ -109,7 +113,24 @@ check_n_install_diag_tools()
     if [ $lsi_raid -eq 1 ]
     then
         echo "Installing diag utilities for LSI MegaRaid..."
-        install_diag_utils $LSI_UTILITY $ARCH
+
+        # Dependencies installation
+        case $DISTRIB in
+            debian)
+                wget "$DIAG_UTILITIES_REPO/megacli.deb" -O/tmp/megacli.deb
+                dpkg -i /tmp/megacli.deb
+                rm -f /tmp/megacli.deb
+            ;;  
+            centos)
+                yum install -y "$DIAG_UTILITIES_REPO/megacli.rpm"
+            ;;  
+            *)  
+                echo "Can't install LSI tools for you distributive"
+                exit 1
+            ;;  
+        esac
+
+        #install_diag_utils $LSI_UTILITY $ARCH
         echo "Finished installation of diag utilities for Apactec raid"
     fi
 }
@@ -171,32 +192,34 @@ install_diag_utils()
 install_monitoring_script()
 {
     echo "Installing monitoring.pl into $INSTALL_TO..."
-    wget -qN --no-check-certificate $MONITORING_SCRIPT_URL -P $INSTALL_TO
-    wget -qN --no-check-certificate $MONITORING_SCRIPT_URL".sha1" -P $INSTALL_TO
+    wget --no-check-certificate $MONITORING_SCRIPT_URL -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
 
-    monitoring_script=`basename $MONITORING_SCRIPT_URL`
+    echo "Installing CRON task to $CRON_FILE"
+    echo "#!/bin/bash" > $CRON_FILE
+    echo "perl $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
+    chmod +x $CRON_FILE
 
-    cd $INSTALL_TO
-    sha1sum --status -c $monitoring_script.sha1
+    #wget -qN --no-check-certificate $MONITORING_SCRIPT_URL".sha1" -P $INSTALL_TO
+
+    #monitoring_script=`basename $MONITORING_SCRIPT_URL`
+
+    #cd $INSTALL_TO
+    #sha1sum --status -c $monitoring_script.sha1
         
-    if [ $? -ne 0 ]
-    then
-        echo "Wrong SHA1 checksums! Removing monitoring script"
-        rm -f $INSTALL_TO/$monitoring_script*
-        exit 2
-    else
-        echo "SHA1 checksums is OK"
-        rm -f $INSTALL_TO/$monitoring_script*.sha1
-        echo "Extracting monitoring file"
-        tar -C $INSTALL_TO -xzf $INSTALL_TO/$monitoring_script
-        rm -f $INSTALL_TO/$monitoring_script
-        monitoring_script=${monitoring_script%.tgz}
-        echo -n "Installing CRON task... "
-        echo "#!/bin/bash" > $CRON_FILE
-        echo "perl $INSTALL_TO/$monitoring_script --cron" >> $CRON_FILE
-        chmod +x $CRON_FILE
-        echo "done."
-    fi
+    #if [ $? -ne 0 ]
+    #then
+    #    echo "Wrong SHA1 checksums! Removing monitoring script"
+    #    rm -f $INSTALL_TO/$monitoring_script*
+    #    exit 2
+    #else
+    #    echo "SHA1 checksums is OK"
+    #    rm -f $INSTALL_TO/$monitoring_script*.sha1
+    #    echo "Extracting monitoring file"
+    #   tar -C $INSTALL_TO -xzf $INSTALL_TO/$monitoring_script
+    #    rm -f $INSTALL_TO/$monitoring_script
+    #    monitoring_script=${monitoring_script%.tgz}
+    #    echo "done."
+    #fi
 }
 
 
@@ -210,7 +233,7 @@ start_smartd_tests()
         mv /etc/smartd.conf /etc/smartd.conf.dist
     fi
 
-    echo $SMARTD_COMMAND > /etc/smartd.conf
+    echo -e $SMARTD_COMMAND > /etc/smartd.conf
     echo "done."
 
     # restart service
@@ -253,8 +276,7 @@ then
     DISTRIB=centos
 fi
 
-echo "We are on $DISTRIB $ARCH"
-
+echo "We working on $DISTRIB $ARCH"
 
 # Dependencies installation
 case $DISTRIB in
