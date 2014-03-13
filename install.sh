@@ -139,6 +139,7 @@ install_monitoring_script()
 {
     echo "Installing monitoring.pl into $INSTALL_TO..."
     wget --no-check-certificate $MONITORING_SCRIPT_URL -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
+    chmod +x "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
 
     echo "Installing CRON task to $CRON_FILE"
     echo "#!/bin/bash" > $CRON_FILE
