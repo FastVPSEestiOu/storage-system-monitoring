@@ -1,10 +1,12 @@
 #!/bin/bash
-#
-# Installation script for FastVPS disk monitoring solution
-#
 
+#
+# Это скрипт установщик для системы мониторинга дисковой подсистемы серверов компании FastVPS Eesti OU
+# Если у Вас есть вопросы по работе данной системы, рекомендуем обратиться по адресам:
+# - https://github.com/FastVPSEestiOu/storage-system-monitoring
+# - https://bill2fast.com (через тикет систему)
 
-# Required packages
+# Данные пакеты обязательны к установке, так как используются скриптом мониторинга
 DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libfile-spec-perl"
 CENTOS_DEPS="wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl"
 
@@ -21,7 +23,7 @@ MONITORING_SCRIPT_URL="https://github.com/FastVPSEestiOu/........../monitoring.p
 CRON_FILE=/etc/cron.hourly/monitoringfastvps
 
 # Installation path
-INSTALL_TO=/opt/fastvps_monitoring
+INSTALL_TO=/usr/local/bin
 
 # smartd config command to run repiodic tests (short/long)
 SMARTD_COMMAND="# smartd.conf by FastVPS
@@ -65,6 +67,7 @@ check_n_install_centos_deps()
     echo "Finished installation of CentOS dependencies."  
 }
 
+# Проверяем наличие аппаратный RAID контроллеров и в случае наличия устанавливаем ПО для их мониторинга
 check_n_install_diag_tools()
 {
     lsi_raid=0

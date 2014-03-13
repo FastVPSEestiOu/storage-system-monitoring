@@ -1,9 +1,9 @@
 #!/usr/bin/perl
 =description
 
-Check System (what ever)
-
-by Alexander Kaidalov <kaidalov@fastvps.ru>
+Authors:
+Alexander Kaidalov <kaidalov@fastvps.ru>
+Pavel Odintsov <odintsov@fastvps.ee>
 
 =cut
 
