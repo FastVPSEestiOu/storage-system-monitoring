@@ -48,7 +48,9 @@ DISTRIB=
 check_n_install_debian_deps()
 {
     echo "Installing Debian dependencies..."
-    res=`apt-get update && apt-get install -y $DEBIAN_DEPS`
+    
+    apt-get update
+    res=`apt-get install -y $DEBIAN_DEPS`
     if [ $? -ne 0 ]
     then
         echo "Something went wrong while installing dependencies. APT log:"
@@ -104,8 +106,8 @@ check_n_install_diag_tools()
     if [ $adaptec_raid -eq 1 ]
     then
         echo "Installing diag utilities for Adaptec raid..."
-        wget "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/arcconf"
-        chmod +x "$INSTALL_TO/arcconf" 
+        wget --no-check-certificate "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/$ADAPTEC_UTILITY"
+        chmod +x "$INSTALL_TO/$ADAPTEC_UTILITY" 
         echo "Finished installation of diag utilities for Apactec raid"
     fi
 
@@ -118,7 +120,7 @@ check_n_install_diag_tools()
         # Dependencies installation
         case $DISTRIB in
             debian)
-                wget "$DIAG_UTILITIES_REPO/megacli.deb" -O/tmp/megacli.deb
+                wget --no-check-certificate "$DIAG_UTILITIES_REPO/megacli.deb" -O/tmp/megacli.deb
                 dpkg -i /tmp/megacli.deb
                 rm -f /tmp/megacli.deb
             ;;  
@@ -145,28 +147,6 @@ install_monitoring_script()
     echo "#!/bin/bash" > $CRON_FILE
     echo "perl $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
     chmod +x $CRON_FILE
-
-    #wget -qN --no-check-certificate $MONITORING_SCRIPT_URL".sha1" -P $INSTALL_TO
-
-    #monitoring_script=`basename $MONITORING_SCRIPT_URL`
-
-    #cd $INSTALL_TO
-    #sha1sum --status -c $monitoring_script.sha1
-        
-    #if [ $? -ne 0 ]
-    #then
-    #    echo "Wrong SHA1 checksums! Removing monitoring script"
-    #    rm -f $INSTALL_TO/$monitoring_script*
-    #    exit 2
-    #else
-    #    echo "SHA1 checksums is OK"
-    #    rm -f $INSTALL_TO/$monitoring_script*.sha1
-    #    echo "Extracting monitoring file"
-    #   tar -C $INSTALL_TO -xzf $INSTALL_TO/$monitoring_script
-    #    rm -f $INSTALL_TO/$monitoring_script
-    #    monitoring_script=${monitoring_script%.tgz}
-    #    echo "done."
-    #fi
 }
 
 

@@ -7,7 +7,7 @@ storage-system-monitoring
 
 Как установить скрипт мониторинга?
 ```bash
-wget https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O-|bash
+wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O-|bash
 ```
 
 Куда отправляются все данные? 
