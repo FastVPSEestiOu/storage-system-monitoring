@@ -203,6 +203,11 @@ sub diag_disks
         if($type eq "disk")
         {
             $cmd = "smartctl --all $key";
+
+            # Это псевдо-устройство ploop от OpenVZ, его не нужно никак обрабатывать
+            if ($value->{'disk'}->{'device'} =~ m#^/dev/ploop# ) { 
+                $cmd = ''; 
+            }   
         }
 
         $res = `$cmd` if $cmd;
