@@ -104,7 +104,8 @@ check_n_install_diag_tools()
     if [ $adaptec_raid -eq 1 ]
     then
         echo "Installing diag utilities for Adaptec raid..."
-        install_diag_utils $ADAPTEC_UTILITY $ARCH
+        wget "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/arcconf"
+        chmod +x "$INSTALL_TO/arcconf" 
         echo "Finished installation of diag utilities for Apactec raid"
     fi
 
@@ -130,64 +131,9 @@ check_n_install_diag_tools()
             ;;  
         esac
 
-        #install_diag_utils $LSI_UTILITY $ARCH
         echo "Finished installation of diag utilities for Apactec raid"
     fi
 }
-
-install_diag_utils()
-{
-    util=$1
-    arch=$2
-
-    if [ -z "$arch" ]
-    then
-        echo "Architecture is unknown - installing both and trying to determine the right one"
-        wget -qN "$DIAG_UTILITIES_REPO""$util"32 -P $INSTALL_TO
-        wget -qN "$DIAG_UTILITIES_REPO""$util"64 -P $INSTALL_TO
-
-        wget -qN "$DIAG_UTILITIES_REPO""$util"32.sha1 -P $INSTALL_TO
-        wget -qN "$DIAG_UTILITIES_REPO""$util"64.sha1 -P $INSTALL_TO
-
-        chmod +x $INSTALL_TO/"$util"*
-
-        res=`"$INSTALL_TO"/"$util"32 -v 2>&1`
-        if [ $? -eq 0 ]
-        then
-            echo "We are on x86. Creating symlink..."
-            ln -sf $INSTALL_TO/"$util"32 $INSTALL_TO/$util
-        fi
-
-        res=`"$INSTALL_TO"/"$util"64 -v 2>&1`
-        if [ $? -eq 0 ]
-        then
-            echo "We are on x86_64. Creating symlink..."
-            ln -sf $INSTALL_TO/"$util"64 $INSTALL_TO/$util
-        fi
-    else
-        echo "Architecture is $arch - installing..."
-        wget -qN "$DIAG_UTILITIES_REPO""$util"$arch -P $INSTALL_TO
-        wget -qN "$DIAG_UTILITIES_REPO""$util"$arch.sha1 -P $INSTALL_TO
-        
-        chmod +x $INSTALL_TO/"$util"*
-        ln -sf $INSTALL_TO/"$util"$ARCH $INSTALL_TO/$util
-    fi
-
-    cd $INSTALL_TO
-    sha1sum --status -c *.sha1
-        
-    if [ $? -ne 0 ]
-    then
-        echo "Wrong SHA1 checksums! Removing installed utilities"
-        rm -f $INSTALL_TO/$util*
-        exit 1
-    else
-        echo "SHA1 checksums is OK"
-        rm -f $INSTALL_TO/$util*.sha1
-        echo "done."
-    fi
-}
-
 
 install_monitoring_script()
 {
