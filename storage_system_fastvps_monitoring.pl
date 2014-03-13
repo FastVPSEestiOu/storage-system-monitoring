@@ -22,7 +22,7 @@ my $VERSION = "1.0";
 
 # diagnostic utilities
 my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
-my $LSI_UTILITY = '/usr/local/bin/megacli';
+my $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli64';
 
 # API
 use constant API_URL => 'https://bill2fast.com/monitoring_control.php';
