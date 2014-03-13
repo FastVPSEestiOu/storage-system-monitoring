@@ -9,25 +9,23 @@ Pavel Odintsov <odintsov@fastvps.ee>
 
 use strict;
 use warnings;
+
 use LWP::UserAgent;
 use HTTP::Request::Common qw(GET POST);
 use File::Spec;
 
 use Data::Dumper;
 
+# Конфигурация
 
-#
-# config
-#
+my $VERSION = "1.0";
 
 # diagnostic utilities
-use constant {
-    ADAPTEC_UTILITY => '/opt/fastvps_monitoring/arcconf',
-    LSI_UTILITY => '/opt/fastvps_monitoring/megacli'
-};
+my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
+my $LSI_UTILITY = '/usr/local/bin/megacli';
 
 # API
-use constant API_URL => 'https://monitoring.url';
+use constant API_URL => 'https://bill2fast.com/monitoring_control.php';
 
 
 #
@@ -149,14 +147,14 @@ sub check_disk_utilities
         # Adaptec
         if(!$adaptec_needed && $value->{"disk"}{type} eq "adaptec")
         {
-            die "Adaptec utility not found. Please, install Adaptech raid management utility into " . ADAPTEC_UTILITY . "\n" unless -e ADAPTEC_UTILITY;
+            die "Adaptec utility not found. Please, install Adaptech raid management utility into " . $ADAPTEC_UTILITY . "\n" unless -e $ADAPTEC_UTILITY;
             $adaptec_needed = 1;
         }
     
         # LSI
         if(!$lsi_needed && $value->{"disk"}{type} eq "lsi")
         {
-            die "not found. Please, install LSI MegaCli raid management utility into " . LSI_UTILITY . " (symlink if needed)\n" unless -e LSI_UTILITY;
+            die "not found. Please, install LSI MegaCli raid management utility into " . $LSI_UTILITY . " (symlink if needed)\n" unless -e $LSI_UTILITY;
             $lsi_needed = 1;
         }
     
@@ -179,7 +177,7 @@ sub diag_disks
         # adaptec
         if($type eq "adaptec")
         {
-            $cmd = ADAPTEC_UTILITY . " getconfig " . $value->{"disk"}{"array_num"} . " ld";
+            $cmd = $ADAPTEC_UTILITY . " getconfig " . $value->{"disk"}{"array_num"} . " ld";
         }
 
         # md
@@ -193,7 +191,7 @@ sub diag_disks
         if($type eq "lsi")
         {
             # it may be run with -L<num> for specific logical drive
-            $cmd = LSI_UTILITY . " -LDInfo -Lall -Aall";
+            $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
         }
     
         # disk
@@ -228,7 +226,8 @@ sub send_disks_results
             action => "save_data",
             status => $status,
             agent_name => 'disks',
-            agent_data => $diag
+            agent_data => $diag,
+            agent_version => $VERSION,
         ]);
 
         # get result
@@ -257,11 +256,12 @@ check_disk_utilities(%disks);
 %disks = diag_disks(%disks);
 
 # send or show results
-if(scalar @ARGV > 0 and $ARGV[0] eq '--cron')
+
+if (scalar @ARGV > 0 and $ARGV[0] eq '--cron')
 {
     if(!send_disks_results(%disks))
     {
-        print "Failed to send monitoring data to FastVPS";
+        print "Failed to send storage monitoring data to FastVPS";
         exit(1);
     }
 }
