@@ -12,6 +12,7 @@ Pavel Odintsov <odintsov@fastvps.ee>
 # megacli -PDList -Aall
 # arcconf getconfig 1 pd
 # Перенести исключение ploop на этап идентификации дисковых устройств
+# Добавить явно User Agent как у мониторинга, чтобы в случае чего их не лочило
 
 use strict;
 use warnings;
