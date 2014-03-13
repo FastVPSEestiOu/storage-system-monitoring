@@ -10,6 +10,8 @@
 DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libfile-spec-perl"
 CENTOS_DEPS="wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl"
 
+GITHUB_FASTVPS_URL="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/"
+
 # Diag utilities repo
 DIAG_UTILITIES_REPO="https://github.com/FastVPSEestiOu/........"
 # utilities have suffix of ARCH, i.e. arcconf32 or megacli64
@@ -17,10 +19,10 @@ ADAPTEC_UTILITY=arcconf
 LSI_UTILITY=megacli
 
 # Monitoring script URL
-MONITORING_SCRIPT_URL="https://github.com/FastVPSEestiOu/........../monitoring.pl.tgz"
+MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/storage_system_fastvps_monitoring.pl"
 
 # Monitoring CRON file
-CRON_FILE=/etc/cron.hourly/monitoringfastvps
+CRON_FILE=/etc/cron.hourly/storage-system-monitoring-fastvps
 
 # Installation path
 INSTALL_TO=/usr/local/bin
