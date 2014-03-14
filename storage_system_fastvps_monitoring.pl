@@ -224,6 +224,7 @@ sub extract_mdadm_raid_status {
 # Run disgnostic utility for each disk
 sub diag_disks {
     my (@disks) = @_;
+    my @result_disks = ();
 
     foreach my $storage (@disks) {
         my $device_name = $storage->{device_name};
@@ -233,7 +234,7 @@ sub diag_disks {
         my $res = '';
         my $cmd = '';
         # где можем, выцепляем состояние массива, актуально в первую очередь для RAID массивов
-        my $storage_status = 'unknown';
+        my $storage_status = 'undefined';
  
         if ($type eq 'raid') {
             # adaptec
@@ -269,9 +270,11 @@ sub diag_disks {
 
         $storage->{'status'} = $storage_status;
         $storage->{'diag'} = $res;
+
+        push @result_disks, $storage;
     }
 
-    return @disks;
+    return @result_disks;
 }
 
 # Send disks diag results
