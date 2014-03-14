@@ -198,7 +198,13 @@ if [ -n "`cat /etc/issue | grep -i \"Debian\"`" ]
 then
     DISTRIB=debian
 fi
+
 if [ -n "`cat /etc/issue | grep -i \"CentOS\"`" ]
+then
+    DISTRIB=centos
+fi
+
+if [ -n "`cat /etc/issue | grep -i \"Parallels Cloud Server\"`" ]
 then
     DISTRIB=centos
 fi
