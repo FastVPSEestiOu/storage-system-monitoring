@@ -223,6 +223,20 @@ sub extract_adaptec_status {
     return $status;
 }
 
+sub extract_lsi_status {
+    my $data = shift;
+
+    my @data_as_array = split "\n", $data;
+    my $status = 'unknown';
+
+    for my $line (@data_as_array) {
+        chomp $line;
+        if ($line =~ /^State\s+:\s+(\w+)/i) {
+            $status = lc($1);
+        }
+    }
+}
+
 # Извлекат из единого блока выдачи состояние массива
 sub extract_mdadm_raid_status {
     my $data = shift;
@@ -280,6 +294,8 @@ sub diag_disks {
                 $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
         
                 $res = `$cmd 2>&1`;
+
+                $storage_status = extract_lsi_status($res);
             }
         } elsif ($type eq 'hard_disk') {
             $cmd = "smartctl --all $device_name";
