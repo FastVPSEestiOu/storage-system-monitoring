@@ -67,8 +67,6 @@ if ($only_detect_drives) {
         print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} in state: $storage->{status} detected\n";
     }
     
-    print Dumper(\@disks);
-
     exit (0);
 }
 
@@ -214,7 +212,7 @@ sub extract_mdadm_raid_status {
     my $status = 'unknown';
 
     for my $line (@data_as_array) {
-        chomp;
+        chomp $line;
         if ($line =~ /^\s+State\s+:\s+(\w+)/) {
             $status = $1;
         }
