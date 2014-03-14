@@ -66,6 +66,8 @@ if ($only_detect_drives) {
     for my $storage (@disks) {
         print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} in state: $storage->{status} detected\n";
     }
+    
+    print Dumper(\@disks);
 
     exit (0);
 }
@@ -143,13 +145,13 @@ sub find_disks {
             
         # Linux MD raid (Soft RAID)
         if ($device_name =~ m/\/md\d+/) {
-            $type = 'md';
+            $model = 'md';
             $is_raid = 1;
         }
 
         # LSI (3ware) / DELL PERC (LSI chips also)
         if ($model =~ m/lsi/i or $model =~ m/PERC/i) {
-            $type = 'lsi';
+            $model = 'lsi';
             $is_raid = 1;
         }
         
@@ -244,7 +246,7 @@ sub diag_disks {
             }   
 
             # md
-            if ($type eq "md") {    
+            if ($model eq "md") {    
                 $cmd = "$mdadm --detail $device_name";
 
                 $res = `$cmd 2>&1`;
@@ -254,7 +256,7 @@ sub diag_disks {
             }
 
             # lsi (3ware)
-            if($type eq "lsi") {
+            if($model eq "lsi") {
                 # it may be run with -L<num> for specific logical drive
                 $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
         
