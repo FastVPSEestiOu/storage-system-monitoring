@@ -235,6 +235,8 @@ sub extract_lsi_status {
             $status = lc($1);
         }
     }
+
+    return $status;
 }
 
 # Извлекат из единого блока выдачи состояние массива
