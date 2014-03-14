@@ -54,13 +54,6 @@ if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
     $cron_run = 1;
 }
 
-if ($cron_run) {
-    if(!send_disks_results(\@disks)) {
-        print "Failed to send storage monitoring data to FastVPS";
-        exit(1);
-    }
-}
-
 if ($only_detect_drives) {
     for my $storage (@disks) {
         print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} detected\n";
@@ -70,10 +63,17 @@ if ($only_detect_drives) {
 }
 
 # check diag utilities
-check_disk_utilities(\@disks);
+check_disk_utilities(@disks);
 
 # get all info from disks
-@disks = diag_disks(\@disks);
+@disks = diag_disks(@disks);
+
+if ($cron_run) {
+    if(!send_disks_results(@disks)) {
+        print "Failed to send storage monitoring data to FastVPS";
+        exit(1);
+    }   
+}
 
 if (!$only_detect_drives && !$cron_run) {
     print "This information was gathered and will be sent to FastVPS:\n";
@@ -167,19 +167,19 @@ sub find_disks {
 
 # Check diagnostic utilities availability
 sub check_disk_utilities {
-    my (%disks) = @_;
+    my (@disks) = @_;
 
     my $adaptec_needed = 0;
     my $lsi_needed = 0;
 
-    while((my $key, my $value) = each(%disks)) {
+    for my $storage (@disks) {
         # Adaptec
-        if($value->{"disk"}{type} eq "adaptec") {
+        if ($storage->{model} eq "adaptec") {
             $adaptec_needed = 1;
         }
             
         # LSI
-        if($value->{"disk"}{type} eq "lsi") {
+        if ($storage->{model} eq "lsi") {
             $lsi_needed = 1;
         }
     }
@@ -191,66 +191,72 @@ sub check_disk_utilities {
     if ($lsi_needed) {
         die "not found. Please, install LSI MegaCli raid management utility into " . $LSI_UTILITY . " (symlink if needed)\n" unless -e $LSI_UTILITY
     }
-
-    return ($adaptec_needed, $lsi_needed);
 }
 
 # Run disgnostic utility for each disk
 sub diag_disks {
-    my (%disks) = @_;
+    my (@disks) = @_;
 
-    while((my $key, my $value) = each(%disks)) {
-        my $type = $value->{"disk"}{"type"};
+    foreach my $storage (@disks) {
+        my $device_name = $storage->{device_name};
+        my $type = $storage->{type};
+        my $model = $storage->{model};
+
         my $res = '';
         my $cmd = '';
-            
-        # adaptec
-        if($type eq "adaptec") {
-            $cmd = $ADAPTEC_UTILITY . " getconfig 1 ld";
+        
+        if ($type eq 'raid') {
+            # adaptec
+            if ($model eq "adaptec") {
+                $cmd = $ADAPTEC_UTILITY . " getconfig 1 ld";
+            }   
+
+            # md
+            if ($type eq "md") {    
+                $cmd = 'cat /proc/mdstat';
+            }
+
+            # lsi (3ware)
+            if($type eq "lsi") {
+                # it may be run with -L<num> for specific logical drive
+                $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
+            }
+        } elsif ($type eq 'hard_disk') {
+            $cmd = "smartctl --all $device_name";
+        } else {
+            warn "Unexpected type";
+            $cmd = '';
         }
 
-        # md
-        if($type eq "md") {    
-            $cmd = 'cat /proc/mdstat';
+        if ($cmd) {
+            $res = `$cmd 2>&1`;
         }
 
-        # lsi (3ware)
-        # TODO:
-        if($type eq "lsi") {
-            # it may be run with -L<num> for specific logical drive
-            $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
-        }
-            
-        # disk
-        if($type eq "disk") {
-            $cmd = "smartctl --all $key";
-        }
-
-        $res = `$cmd 2>&1` if $cmd;
-        $disks{$key}{"diag"} = $res;
+        $storage->{"diag"} = $res;
     }
 
-    return %disks;
+    return @disks;
 }
 
 # Send disks diag results
 sub send_disks_results {
-    my (%disks) = @_;
+    my (@disks) = @_;
 
-    foreach(keys(%disks)) {
-        my $disk = $disks{$_};
-        my $diag = $disk->{'diag'};
-            
+    for my $storage (@disks) {
         # send results
         my $status = 'error';
-        $status = 'success' if $diag ne '';
+        $status = 'success' if $storage->{diag} ne '';
                 
         my $req = POST($API_URL, [
-            action => "save_data",
-            status => $status,
-            agent_name => 'disks',
-            agent_data => $diag,
+            action        => "save_data",
+            status        => $status,
+            agent_name    => 'disks',
+            agent_data    => $storage->{diag},
             agent_version => $VERSION,
+            disk_name     => 'disk name',
+            disk_type     => 'raid',
+            disk_model    => 'adaptec',
+            diag          => $storage->{diag},
         ]);
 
         # get result
