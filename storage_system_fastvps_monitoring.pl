@@ -145,8 +145,8 @@ sub find_disks {
             $is_raid = 1;
         }
 
-        # LSI (3ware)
-        if ($model =~ m/lsi/i) {
+        # LSI (3ware) / DELL PERC (LSI chips also)
+        if ($model =~ m/lsi/i or $model =~ m/PERC/i) {
             $type = 'lsi';
             $is_raid = 1;
         }
