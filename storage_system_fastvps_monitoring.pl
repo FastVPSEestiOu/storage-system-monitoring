@@ -37,12 +37,17 @@ my $API_URL = 'https://bill2fast.com/monitoring_control.php';
 
 # Centos && Debian uses same path
 my $parted = "LANG=POSIX /sbin/parted";
+# Centos && Debian uses same path
+my $mdadm = "/sbin/mdadm";
 
 # Обанаруживаем все устройства хранения
 my @disks = find_disks();
 
 # Проверим, все ли у нас тулзы для диагностики установлены
 check_disk_utilities(@disks);
+
+# Получаем информацию обо всех дисках
+@disks = diag_disks(@disks);
 
 my $only_detect_drives = 0;
 
@@ -59,14 +64,11 @@ if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
 
 if ($only_detect_drives) {
     for my $storage (@disks) {
-        print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} detected\n";
+        print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} in state: $storage->{status} detected\n";
     }
 
     exit (0);
 }
-
-# get all info from disks
-@disks = diag_disks(@disks);
 
 if ($cron_run) {
     if(!send_disks_results(@disks)) {
@@ -171,6 +173,7 @@ sub check_disk_utilities {
 
     my $adaptec_needed = 0;
     my $lsi_needed = 0;
+    my $mdadm_needed = 0;
 
     for my $storage (@disks) {
         # Adaptec
@@ -182,6 +185,10 @@ sub check_disk_utilities {
         if ($storage->{model} eq "lsi") {
             $lsi_needed = 1;
         }
+
+        if ($storage->{model} eq "md") {
+            $mdadm_needed = 1;
+        }
     }
 
     if ($adaptec_needed) {
@@ -189,8 +196,29 @@ sub check_disk_utilities {
     }
 
     if ($lsi_needed) {
-        die "not found. Please, install LSI MegaCli raid management utility into " . $LSI_UTILITY . " (symlink if needed)\n" unless -e $LSI_UTILITY
+        die "Megacli not found. Please, install LSI MegaCli raid management utility into " . $LSI_UTILITY . " (symlink if needed)\n" unless -e $LSI_UTILITY
     }
+
+    if ($mdadm_needed) {
+        die "mdadm not found. Please, install mdadm" unless -e $mdadm;
+    }
+}
+
+# Извлекат из единого блока выдачи состояние массива
+sub extract_mdadm_raid_status {
+    my $data = shift;
+
+    my @data_as_array = split "\n", $data;
+    my $status = 'unknown';
+
+    for my $line (@data_as_array) {
+        chomp;
+        if ($line =~ /^\s+State\s+:\s+(\w+)/) {
+            $status = $1;
+        }
+    }
+
+    return $status;
 }
 
 # Run disgnostic utility for each disk
@@ -204,35 +232,43 @@ sub diag_disks {
 
         my $res = '';
         my $cmd = '';
-        
+        # где можем, выцепляем состояние массива, актуально в первую очередь для RAID массивов
+        my $storage_status = 'unknown';
+ 
         if ($type eq 'raid') {
             # adaptec
             if ($model eq "adaptec") {
                 $cmd = $ADAPTEC_UTILITY . " getconfig 1 ld";
+                $res = `$cmd 2>&1`;
             }   
 
             # md
             if ($type eq "md") {    
-                $cmd = 'cat /proc/mdstat';
+                $cmd = "$mdadm --detail $device_name";
+
+                $res = `$cmd 2>&1`;
+
+                # попытаемся извлечь состояние массива 
+                $storage_status = extract_mdadm_raid_status($res);
             }
 
             # lsi (3ware)
             if($type eq "lsi") {
                 # it may be run with -L<num> for specific logical drive
                 $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
+        
+                $res = `$cmd 2>&1`;
             }
         } elsif ($type eq 'hard_disk') {
             $cmd = "smartctl --all $device_name";
+            $res = `$cmd 2>&1`;
         } else {
             warn "Unexpected type";
             $cmd = '';
         }
 
-        if ($cmd) {
-            $res = `$cmd 2>&1`;
-        }
-
-        $storage->{"diag"} = $res;
+        $storage->{'status'} = $storage_status;
+        $storage->{'diag'} = $res;
     }
 
     return @disks;
