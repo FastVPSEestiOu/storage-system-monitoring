@@ -45,3 +45,12 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 Кто может использовать данное ПО?
 - Любой клиент компании FastVPS Eesti OU
 
+Какое ПО мы устанавливаем на сервер и для чего?
+- parted - универсальный инструмент для получения информации о дисковых устройствах
+- smartmontools - пакет утилит для получения S.M.A.R.T. информации из устройства
+- Perl модули для работы с HTTP и HTTPS, для отправки данных на сервер для анализа
+- arcconf/megacli - утилиты от производителей Adaptec и LSI
+
+Откада берется проприетарное ПО для LSI/Adaptec?
+- http://download.adaptec.com/raid/storage_manager/arcconf_v1_5_20942.zip 8.07.08-1
+- http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20XD/MegaCli_Linux.zip 1_5_20942
