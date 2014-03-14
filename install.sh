@@ -232,5 +232,6 @@ start_smartd_tests
 
 echo "Please call command $MONITORING_SCRIPT_NAME and check it output manually"
 echo "Checking disk system...";
-$INSTALL_TO/$MONITORING_SCRIPT_NAME
+$INSTALL_TO/$MONITORING_SCRIPT_NAME --detect
+
 
