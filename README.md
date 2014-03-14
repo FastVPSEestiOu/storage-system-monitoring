@@ -6,7 +6,7 @@ storage-system-monitoring
 В данном репозитории размещен открытый код используемой нами системы диагностики дисковой подсистемы Ваших серверов. 
 
 Как установить скрипт мониторинга?
-```
+```bash
 wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O-|bash
 ```
 
