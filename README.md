@@ -54,3 +54,9 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 Откада берется проприетарное ПО для LSI/Adaptec?
 - http://download.adaptec.com/raid/storage_manager/arcconf_v1_5_20942.zip 8.07.08-1
 - http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20XD/MegaCli_Linux.zip 1_5_20942
+
+Могу ли я использовать программу только локально, вручную проверяя состояние массивов?
+- Да, разумеется, но при этом Вы лишаетсь возможностей нашей системе по анализу S.M.A.R.T. и прочих метрик, проверяется только состояние массива, также Вы не получаете никаикх уведомлений в случае отказа дисков
+
+Возможна ли поддержка XXX YYY?
+- Разумеется, патчи приветствуются! 
