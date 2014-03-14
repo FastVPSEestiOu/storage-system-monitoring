@@ -38,8 +38,11 @@ my $API_URL = 'https://bill2fast.com/monitoring_control.php';
 # Centos && Debian uses same path
 my $parted = "LANG=POSIX /sbin/parted";
 
-# find disks
+# Обанаруживаем все устройства хранения
 my @disks = find_disks();
+
+# Проверим, все ли у нас тулзы для диагностики установлены
+check_disk_utilities(@disks);
 
 my $only_detect_drives = 0;
 
@@ -61,9 +64,6 @@ if ($only_detect_drives) {
 
     exit (0);
 }
-
-# check diag utilities
-check_disk_utilities(@disks);
 
 # get all info from disks
 @disks = diag_disks(@disks);
