@@ -39,7 +39,7 @@ my $API_URL = 'https://bill2fast.com/monitoring_control.php';
 my $parted = "LANG=POSIX /sbin/parted";
 
 # find disks
-my %disks = find_disks();
+my @disks = find_disks();
 
 my $only_detect_drives = 0;
 
@@ -48,9 +48,6 @@ my $cron_run = 0;
 
 if (scalar @ARGV > 0 and $ARGV[0] eq '--detect') {
     $only_detect_drives = 1;
-
-    print Dumper(\%disks);
-    exit(0);
 }
 
 if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
@@ -58,29 +55,33 @@ if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
 }
 
 if ($cron_run) {
-    if(!send_disks_results(%disks)) {
+    if(!send_disks_results(\@disks)) {
         print "Failed to send storage monitoring data to FastVPS";
         exit(1);
     }
 }
 
 if ($only_detect_drives) {
-    # Детектируем винты и выводим их
+    for my $storage (@disks) {
+        print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} detected\n";
+    }
+
+    exit (0);
 }
 
 # check diag utilities
-check_disk_utilities(%disks);
+check_disk_utilities(\@disks);
 
 # get all info from disks
-%disks = diag_disks(%disks);
+@disks = diag_disks(\@disks);
 
 if (!$only_detect_drives && !$cron_run) {
     print "This information was gathered and will be sent to FastVPS:\n";
-    print "Disks found: " . (scalar keys %disks) . "\n\n";
+    print "Disks found: " . (scalar @disks) . "\n\n";
 
-    while((my $key, my $value) = each(%disks)) {   
-        print $key . " is " . $value->{'disk'}->{'type'} . " Diagnostic data:\n";
-        print $value->{'diag'} . "\n\n";
+    for my $storage (@disks) {
+        print $storage->{device_name} . " is " . $storage->{'type'} . " Diagnostic data:\n";
+        print $storage->{'diag'} . "\n\n";
     }       
 }
 
@@ -93,7 +94,7 @@ if (!$only_detect_drives && !$cron_run) {
 # Функция обнаружения всех дисковых устройств в системе
 sub find_disks {
     # here we'll save disk => ( info, ... )
-    my %disks = ();
+    my @disks = ();
     
     # get list of disk devices with parted 
     my @parted_output = `$parted -lms`;
@@ -128,36 +129,40 @@ sub find_disks {
             next;
         }
 
-        # add to list
-        my $tmp_disk = {};
-        $tmp_disk->{"disk"} = {
-            "device" => $device_name,
-            "size"   => $device_size,
-            "model"  => $model,
-        };
-    
         # detect type (raid or disk)
         my $type = 'disk';
-                    
+        my $is_raid = '';                 
+   
         # adaptec
         if($model =~ m/adaptec/i) {
-            $type = 'adaptec';
+            $model = 'adaptec';
+            $is_raid = 1;
         }
             
         # Linux MD raid (Soft RAID)
-        $type = 'md' if $fields[0] =~ m/\/md\d+/;
-            
-        # LSI (3ware)
-        $type = 'lsi' if $fields[6] =~ m/lsi/i;
-            
-        # add type
-        $tmp_disk->{"disk"}{"type"} = $type;
-        
+        if ($device_name =~ m/\/md\d+/) {
+            $type = 'md';
+            $is_raid = 1;
+        }
 
-        %{$disks{$tmp_disk->{"disk"}->{"device"}}} = %$tmp_disk;    
+        # LSI (3ware)
+        if ($model =~ m/lsi/i) {
+            $type = 'lsi';
+            $is_raid = 1;
+        }
+        
+        # add to list
+        my $tmp_disk = { 
+            "device_name" => $device_name,
+            "size"        => $device_size,
+            "model"       => $model,
+            "type"        => ($is_raid ? 'raid' : 'hard_disk'),
+        };  
+
+        push @disks, $tmp_disk;
     }
 
-    return %disks;
+    return @disks;
 }
 
 # Check diagnostic utilities availability
@@ -221,7 +226,7 @@ sub diag_disks {
             $cmd = "smartctl --all $key";
         }
 
-        $res = `$cmd` if $cmd;
+        $res = `$cmd 2>&1` if $cmd;
         $disks{$key}{"diag"} = $res;
     }
 
