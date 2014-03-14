@@ -14,7 +14,8 @@ License: GPLv2
 # arcconf getconfig 1 pd
 # Перенести исключение ploop на этап идентификации дисковых устройств
 # Добавить явно User Agent как у мониторинга, чтобы в случае чего их не лочило
-# В случае Adaptec номер контроллера зафикисрован как 1
+# В случае Adaptec номер контроллера зафикисрован как 1, поддерживается только один контроллер
+# В случае Adaptec поддерживается только один логический раздел!!!
 
 use strict;
 use warnings;
@@ -204,6 +205,24 @@ sub check_disk_utilities {
     }
 }
 
+# Извлекает из единого блока данных состояние логического устройства Adaptec
+sub extract_adaptec_status {
+    my $data = shift;
+
+    my @data_as_array = split "\n", $data;
+    my $status = 'unknown';
+
+    for my $line (@data_as_array) {
+        chomp $line;
+        if ($line =~ /^\s+Status of logical device\s+:\s+(\w+)/i) {
+            $status = lc($1);
+        }
+    }
+
+
+    return $status;
+}
+
 # Извлекат из единого блока выдачи состояние массива
 sub extract_mdadm_raid_status {
     my $data = shift;
@@ -241,6 +260,8 @@ sub diag_disks {
             if ($model eq "adaptec") {
                 $cmd = $ADAPTEC_UTILITY . " getconfig 1 ld";
                 $res = `$cmd 2>&1`;
+
+                $storage_status = extract_adaptec_status($res);
             }   
 
             # md
