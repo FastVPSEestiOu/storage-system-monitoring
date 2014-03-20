@@ -333,7 +333,7 @@ sub send_disks_results {
     if ($res->is_success) {
         print "Data sent successfully\n";
     } else {
-        warn "Can't sent data to collector\n";
+        warn "Can't sent data to collector: " . $res->status_line  .  "\n";
     }
 }
 
