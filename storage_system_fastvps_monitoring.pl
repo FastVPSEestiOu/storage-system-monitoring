@@ -23,7 +23,7 @@ use warnings;
 use LWP::UserAgent;
 use HTTP::Request::Common qw(GET POST);
 use File::Spec;
-
+use JSON;
 use Data::Dumper;
 
 # Конфигурация
@@ -34,7 +34,7 @@ my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
 my $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli64';
 
 # API
-my $API_URL = 'https://bill2fast.com/monitoring_control.php';
+my $API_URL = 'https://bill2fast.com/api/server-state/storage';
 
 # Centos && Debian uses same path
 my $parted = "LANG=POSIX /sbin/parted";
@@ -320,31 +320,20 @@ sub diag_disks {
 sub send_disks_results {
     my (@disks) = @_;
 
-    for my $storage (@disks) {
-        # send results
-        my $status = 'error';
-        $status = 'success' if $storage->{diag} ne '';
-                
-        my $req = POST($API_URL, [
-            action        => "save_data",
-            status        => $status,
-            agent_name    => 'disks',
-            agent_data    => $storage->{diag},
-            agent_version => $VERSION,
-            disk_name     => 'disk name',
-            disk_type     => 'raid',
-            disk_model    => 'adaptec',
-            diag          => $storage->{diag},
-        ]);
+    my $req = POST($API_URL, [
+        'storage_devices' => encode_json(\@disks),
+        'version'         => $VERSION,
+    ]);
 
-        # get result
-        my $ua = LWP::UserAgent->new();
-        my $res = $ua->request($req);
-                
-        # TODO: check $res? old data in monitoring system will be notices
-        #       one way or the other...
-
-        return $res->is_success;
+    # get result
+    my $ua = LWP::UserAgent->new();
+    #$ua->agent("FastVPS disk monitoring version $VERSION");
+    my $res = $ua->request($req);
+    
+    if ($res->is_success) {
+        print "Data sent successfully\n";
+    } else {
+        warn "Can't sent data to collector\n";
     }
 }
 
