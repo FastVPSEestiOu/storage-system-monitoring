@@ -320,10 +320,12 @@ sub diag_disks {
 sub send_disks_results {
     my (@disks) = @_;
 
-    my $req = POST($API_URL, [
+    my $request_data = [
         'storage_devices' => encode_json(\@disks),
         'version'         => $VERSION,
-    ]);
+    ];
+
+    my $req = POST($API_URL, $request_data);
 
     # get result
     my $ua = LWP::UserAgent->new();
