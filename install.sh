@@ -236,8 +236,9 @@ install_monitoring_script
 # Periodic smartd tests
 start_smartd_tests
 
-echo "Please call command $MONITORING_SCRIPT_NAME and check it output manually"
-echo "Checking disk system...";
+echo "Send data to FastVPS..."
+$INSTALL_TO/$MONITORING_SCRIPT_NAME --cron
+echo "Checking disk system..."
 $INSTALL_TO/$MONITORING_SCRIPT_NAME --detect
 
 
