@@ -321,11 +321,11 @@ sub send_disks_results {
     my (@disks) = @_;
 
     my $request_data = [
-        'storage_devices' => encode_json(\@disks),
+        'storage_devices' => \@disks,
         'version'         => $VERSION,
     ];
 
-    my $req = POST($API_URL, $request_data);
+    my $req = POST($API_URL, Content => encode_json($request_data) );
 
     # get result
     my $ua = LWP::UserAgent->new();
