@@ -31,7 +31,8 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 
 Какие ОС поддерживаются:
 - Debian Linux 6, 7 и старше
-- Centos Lunux 5, 6 и старше
+- Centos Linux 5, 6 и старше
+- Parallels Cloud Server 6
 
 На каком языке написано ПО для мониторинга?
 - Perl (модуль мониторинга)
