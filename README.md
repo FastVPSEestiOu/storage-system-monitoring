@@ -73,10 +73,10 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 storage_system_fastvps_monitoring.pl --detect
 Device /dev/sda with type: raid model: adaptec in state: optimal detected
 Device /dev/sda with type: raid model: lsi in state: optimal detected
-Device /dev/sda with type: hard_disk model: ATA SAMSUNG HD753LJ in state: undefined detected
-Device /dev/sdb with type: hard_disk model: ATA SAMSUNG HD753LJ in state: undefined detected
-Device /dev/sdc with type: hard_disk model: ATA ST31500341AS in state: undefined detected
-Device /dev/sdd with type: hard_disk model: ATA ST31500341AS in state: undefined detected
+Device /dev/sda with type: hard_disk model: ATA SAMSUNG HD753LJ detected
+Device /dev/sdb with type: hard_disk model: ATA SAMSUNG HD753LJ detected
+Device /dev/sdc with type: hard_disk model: ATA ST31500341AS detected
+Device /dev/sdd with type: hard_disk model: ATA ST31500341AS detected
 Device /dev/md0 with type: raid model: md in state: clean detected
 Device /dev/md1 with type: raid model: md in state: clean detected
 Device /dev/md2 with type: raid model: md in state: clean detected
