@@ -214,7 +214,7 @@ sub extract_adaptec_status {
 
     for my $line (@data_as_array) {
         chomp $line;
-        if ($line =~ /^\s+Status of logical device\s+:\s+(\w+)/i) {
+        if ($line =~ /^\s+Status of logical device\s+:\s+(.+)$/i) {
             $status = lc($1);
         }
     }
