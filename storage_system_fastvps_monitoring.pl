@@ -65,14 +65,12 @@ if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
 
 if ($only_detect_drives) {
     for my $storage (@disks) {
-        my $status_string = '';
-
         # Для обычных дисков понятия статуса нету
         if ($storage->{'type'} eq 'hard_disk') {
             print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} detected\n";
         } else {
             # а вот для RAID оно вполне определено
-            print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} $status_string detected\n";
+            print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} in state: $storage->{status} detected\n";
         }
 
     }
