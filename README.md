@@ -10,7 +10,7 @@ storage-system-monitoring
 wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O-|bash
 ```
 
-Насклько безопасен скрипт?
+Насколько безопасен скрипт?
 - Скрипт работает по шифрованному каналу (https, ssl)
 - Скрипт не открывает портов на системе (что исключает вторжение извне)
 - Скрипт не обновляется автоматически (что исключение добавление уязвимостей)
