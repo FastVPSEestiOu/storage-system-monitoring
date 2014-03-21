@@ -58,7 +58,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Perl модули для работы с HTTP и HTTPS, для отправки данных на сервер для анализа
 - arcconf/megacli - утилиты от производителей Adaptec и LSI
 
-Откада берется проприетарное ПО для LSI/Adaptec?
+Откуда берется проприетарное ПО для LSI/Adaptec?
 - http://download.adaptec.com/raid/storage_manager/arcconf_v1_5_20942.zip 8.07.08-1
 - http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20XD/MegaCli_Linux.zip 1_5_20942
 
