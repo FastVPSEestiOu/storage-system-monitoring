@@ -37,7 +37,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 
 Какие ОС поддерживаются:
 - Debian Linux 6, 7 и старше
-- Centos Linux 5, 6 и старше
+- Centos Linux 5 (только вручную), 6 и старше
 - Parallels Cloud Server 6
 
 На каком языке написано ПО для мониторинга?
@@ -67,6 +67,10 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 
 Возможна ли поддержка XXX YYY?
 - Разумеется, патчи приветствуются! 
+
+Как осуществляется установка на CentOS 5?
+- До начала устанвоки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
+- Требуется более новая версия пакета parted (потребуется сборка вручную)
 
 Как выглядит выдача скрипта?
 ```bash
