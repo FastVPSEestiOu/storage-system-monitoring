@@ -71,7 +71,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 Как осуществляется установка на CentOS 5?
 - До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
 - Требуется более новая версия пакета parted (потребуется сборка вручную, предлагаемая инструкция ниже)
-- Треубуется в скрипте /usr/local/bin/storage_system_fastvps_monitoring.pl строку my $parted = ... скорректировать до вида:
+- Требуется в скрипте /usr/local/bin/storage_system_fastvps_monitoring.pl строку my $parted = ... скорректировать до вида:
 ```bash
 my $parted = "LANG=POSIX /opt/parted/sbin/parted";
 ```  
