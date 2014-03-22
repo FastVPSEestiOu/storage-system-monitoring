@@ -63,14 +63,31 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20XD/MegaCli_Linux.zip 1_5_20942
 
 Могу ли я использовать программу только локально, вручную проверяя состояние массивов?
-- Да, разумеется, но при этом Вы лишаетсь возможностей нашей системе по анализу S.M.A.R.T. и прочих метрик, проверяется только состояние массива, также Вы не получаете никаикх уведомлений в случае отказа дисков
+- Да, разумеется, но при этом Вы лишаетсь возможностей нашей системе по анализу S.M.A.R.T. и прочих метрик, проверяется только состояние массива, также Вы не получаете никаких уведомлений в случае отказа дисков
 
 Возможна ли поддержка XXX YYY?
 - Разумеется, патчи приветствуются! 
 
 Как осуществляется установка на CentOS 5?
-- До начала устанвоки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
-- Требуется более новая версия пакета parted (потребуется сборка вручную)
+- До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
+- Требуется более новая версия пакета parted (потребуется сборка вручную, предлагаемая инструкция ниже)
+- Треубуется в скрипте /usr/local/bin/storage_system_fastvps_monitoring.pl строку my $parted = ... скорректировать до вида:
+```bash
+my $parted = "LANG=POSIX /opt/parted/sbin/parted";
+```  
+
+Как собрать parted более новой версии на CentOS 5?
+```bash
+yum install -y xz gcc make e2fsprogs-devel libtermcap-devel readline-devel
+cd /usr/src
+wget http://ftp.gnu.org/gnu/parted/parted-3.1.tar.xz
+unxz parted-3.1.tar.xz 
+tar -xf parted-3.1.tar
+cd parted-3.1
+./configure --prefix=/opt/parted
+make
+make install
+```
 
 Как выглядит выдача скрипта?
 ```bash
