@@ -50,8 +50,8 @@ my @major_blacklist = (
 );
 
 # Обанаруживаем все устройства хранения
-my @disks = find_disks();
-# find_disks_without_parted
+# Также у нас есть старая версия, работающая исключительно на базе parted: find_disks()
+my @disks = find_disks_without_parted();
 
 # Проверим, все ли у нас тулзы для диагностики установлены
 check_disk_utilities(@disks);
