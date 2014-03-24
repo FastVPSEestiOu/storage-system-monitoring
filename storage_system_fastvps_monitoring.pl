@@ -22,7 +22,6 @@ use warnings;
 
 use LWP::UserAgent;
 use HTTP::Request::Common qw(GET POST);
-use File::Spec;
 use JSON;
 use Data::Dumper;
 

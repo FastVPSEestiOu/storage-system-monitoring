@@ -8,7 +8,7 @@
 #
 
 # Данные пакеты обязательны к установке, так как используются скриптом мониторинга
-DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libfile-spec-perl libjson-perl"
+DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl"
 CENTOS_DEPS="wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON"
 
 # init.d script для smartd
