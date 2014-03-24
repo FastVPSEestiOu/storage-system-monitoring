@@ -514,9 +514,11 @@ sub send_disks_results {
     my $res = $ua->request($req);
     
     if ($res->is_success) {
-        print "Data sent successfully\n";
+        #print "Data sent successfully\n";
+        exit 0;
     } else {
         warn "Can't sent data to collector: " . $res->status_line  .  "\n";
+        exit 1;
     }
 }
 

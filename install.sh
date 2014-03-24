@@ -238,6 +238,14 @@ start_smartd_tests
 
 echo "Send data to FastVPS..."
 $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron
+
+if [ $? -ne 0 ] 
+then
+    echo "Can't run script in --cron mode"
+else 
+    echo "Data sent successfully"
+fi
+
 echo "Checking disk system..."
 $INSTALL_TO/$MONITORING_SCRIPT_NAME --detect
 
