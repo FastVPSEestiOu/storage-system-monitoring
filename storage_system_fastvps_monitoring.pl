@@ -83,7 +83,11 @@ if ($only_detect_drives) {
         }
 
     }
-    
+   
+    if (scalar @disks == 0) {
+        print "I can't find any disk devices. I suppose bug on this platform :(";
+    }
+ 
     exit (0);
 }
 
@@ -228,7 +232,13 @@ sub get_device_vendor {
     my $vendor_path = "$sysfs_block_path/$device_name/device/vendor";
 
     if (-e $vendor_path) {
-        return lc( file_get_contents($vendor_path) );     
+        my $vendor_raw = file_get_contents($vendor_path);
+        $vendor_raw = lc($vendor_raw);
+
+        # remove trailing spaces
+        $vendor_raw =~ s/\s+$//g;
+
+        return $vendor_raw;
     } else {
         return "unknown";
     }
@@ -244,7 +254,7 @@ sub get_device_size {
 
         # Переводим в байты
         my $size_in_bytes = $size_in_blocks << 9;
-        my $size_in_gbytes = $size_in_bytes/1024**3;
+        my $size_in_gbytes = int($size_in_bytes/1024**3);
 
         return "${size_in_gbytes}GB"; 
     } else {
@@ -279,7 +289,8 @@ sub find_disks_without_parted {
         # detect type (raid or disk)
         my $type = 'disk';
         my $is_raid = '';    
-   
+        my $raid_level = '';   
+
         # adaptec
         if($model =~ m/adaptec/i) {
             $model = 'adaptec';
@@ -290,6 +301,8 @@ sub find_disks_without_parted {
         if ($device_name =~ m/\/md\d+/) {
             $model = 'md';
             $is_raid = 1;
+
+            $raid_level = file_get_contents("/sys/block/$block_device/md/level");
         }   
 
         # LSI (3ware) / DELL PERC (LSI chips also)
