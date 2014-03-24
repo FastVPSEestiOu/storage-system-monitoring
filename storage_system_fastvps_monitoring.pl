@@ -40,9 +40,18 @@ my $API_URL = 'https://bill2fast.com/api/server-state/storage';
 my $parted = "LANG=POSIX /sbin/parted";
 # Centos && Debian uses same path
 my $mdadm = "/sbin/mdadm";
+my $sysfs_block_path = '/sys/block';
+
+# Список устройств, которые мы игнорируем из рассмотрения
+my @major_blacklist = (
+    1,   # это ram устройства
+    7,   # это loop устройства
+    182, # это openvz ploop диск
+);
 
 # Обанаруживаем все устройства хранения
 my @disks = find_disks();
+# find_disks_without_parted
 
 # Проверим, все ли у нас тулзы для диагностики установлены
 check_disk_utilities(@disks);
@@ -161,6 +170,134 @@ sub find_disks {
             $is_raid = 1;
         }
         
+        # add to list
+        my $tmp_disk = { 
+            "device_name" => $device_name,
+            "size"        => $device_size,
+            "model"       => $model,
+            "type"        => ($is_raid ? 'raid' : 'hard_disk'),
+        };  
+
+        push @disks, $tmp_disk;
+    }
+
+    return @disks;
+}
+
+# Получаем путь до устройства по его имени
+sub get_device_path {
+    my $name = shift;
+
+    return "/dev/$name";
+}
+
+# Получаем major идентификатор блочного устройства в Linux
+sub get_major {
+    my $device_path = shift;
+
+    my $rdev = (stat $device_path)[6];
+
+    # Это платформо зависимый код!
+    # https://github.com/quattor/LC/blob/master/src/main/perl/Stat.pm
+    my $major = ($rdev >> 8) & 0xFF;
+
+    return $major;
+}
+
+sub in_array {
+    my ($elem, @array) = @_; 
+
+    return scalar grep { $elem eq $_ } @array;  
+}
+
+sub file_get_contents {
+    my $path = shift;
+
+    open my $fl, "<", $path or die "Can't open file";
+    my $data = join '', <$fl>;
+    chomp $data;
+
+    close $fl;
+    return $data;
+}
+
+# Пробуем получить производителя устройства
+sub get_device_vendor {
+    my $device_name = shift;
+
+    my $vendor_path = "$sysfs_block_path/$device_name/device/vendor";
+
+    if (-e $vendor_path) {
+        return lc( file_get_contents($vendor_path) );     
+    } else {
+        return "unknown";
+    }
+}
+
+sub get_device_size {
+    my $device_name = shift;
+   
+    my $size_path = "$sysfs_block_path/$device_name/size";
+
+    if (-e $size_path) {
+        my $size_in_blocks = file_get_contents($size_path);
+
+        # Переводим в байты
+        my $size_in_bytes = $size_in_blocks << 9;
+        my $size_in_gbytes = $size_in_bytes/1024**3;
+
+        return "${size_in_gbytes}GB"; 
+    } else {
+        return "unknown";
+    }
+}
+
+# Обнаруживаем дисковые устройства без использования внешнего parted
+# Используются идеи из кода util-linux-2.24, lsblk
+sub find_disks_without_parted {
+    opendir my $block_devices, $sysfs_block_path or die "Can't open path $sysfs_block_path";
+
+    my @disks = ();
+    while (my $block_device = readdir($block_devices)) {
+        # skip . and ..
+        if ($block_device =~ m/^\.+$/) {
+            next;
+        }
+
+        # Также исключаем из рассмотрения служебные не физические устройства по номеру major
+        my $major = get_major(get_device_path($block_device));
+    
+        if (in_array($major, @major_blacklist)) {
+            next;
+        }
+
+        my $model = get_device_vendor($block_device);
+        my $device_size = get_device_size($block_device);
+
+        my $device_name = get_device_path($block_device);
+
+        # detect type (raid or disk)
+        my $type = 'disk';
+        my $is_raid = '';    
+   
+        # adaptec
+        if($model =~ m/adaptec/i) {
+            $model = 'adaptec';
+            $is_raid = 1;
+        }   
+    
+        # Linux MD raid (Soft RAID)
+        if ($device_name =~ m/\/md\d+/) {
+            $model = 'md';
+            $is_raid = 1;
+        }   
+
+        # LSI (3ware) / DELL PERC (LSI chips also)
+        if ($model =~ m/lsi/i or $model =~ m/PERC/i) {
+            $model = 'lsi';
+            $is_raid = 1;
+        }   
+    
         # add to list
         my $tmp_disk = { 
             "device_name" => $device_name,
