@@ -244,6 +244,25 @@ sub get_device_vendor {
     }
 }
 
+# Получаем модуль устройства
+sub get_device_model {
+    my $device_name = shift;
+
+    my $model_path = "$sysfs_block_path/$device_name/device/model";
+
+    if (-e $model_path) {
+        my $model_raw = file_get_contents($model_path);
+        $model_raw = lc($model_raw);
+
+        # remove trailing spaces
+        $model_raw =~ s/\s+$//g;
+
+        return $model_raw;
+    } else {
+        return "unknown";
+    }    
+}
+
 sub get_device_size {
     my $device_name = shift;
    
@@ -281,7 +300,12 @@ sub find_disks_without_parted {
             next;
         }
 
-        my $model = get_device_vendor($block_device);
+        my $vendor = get_device_vendor($block_device);
+        my $model = get_device_model($block_device);
+
+        # Код ниже ожидает вот в таком виде
+        $model = "$vendor $model";
+        
         my $device_size = get_device_size($block_device);
 
         my $device_name = get_device_path($block_device);
