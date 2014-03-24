@@ -81,7 +81,8 @@ check_n_install_diag_tools()
     lsi_raid=0
     adaptec_raid=0
 
-    parted_diag=`parted -mls`
+    # флаг -m не используется, так как он не поддерживается в версии parted на CentOS 5
+    parted_diag=`parted -ls`
 
     echo "Checking hardware for LSI or Adaptec RAID controllers..."
     if [ -n "`echo $parted_diag | grep -i adaptec`" ]
