@@ -210,6 +210,12 @@ then
     DISTRIB=centos
 fi
 
+# detect Ubuntu as Debian
+if [ -n "`cat /etc/issue | grep -i \"Ubuntu\"`" ]
+then
+    DISTRIB=debian
+fi
+
 echo "We working on $DISTRIB $ARCH"
 
 # Dependencies installation
