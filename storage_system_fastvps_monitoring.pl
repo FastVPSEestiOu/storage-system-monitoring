@@ -187,6 +187,15 @@ sub find_disks {
     return @disks;
 }
 
+# Убираем все пробельные символы в конце строки
+sub rtrim {
+    my $string = shift;
+
+    $string =~ s/\s+$//g;
+
+    return $string;
+}
+
 # Получаем путь до устройства по его имени
 sub get_device_path {
     my $name = shift;
@@ -395,7 +404,7 @@ sub extract_adaptec_status {
     for my $line (@data_as_array) {
         chomp $line;
         if ($line =~ /^\s+Status of logical device\s+:\s+(\w+)$/i) {
-            $status = lc($1);
+            $status = lc(rtrim($1));
         }
     }
 
@@ -412,7 +421,7 @@ sub extract_lsi_status {
     for my $line (@data_as_array) {
         chomp $line;
         if ($line =~ /^State\s+:\s+(\w+)/i) {
-            $status = lc($1);
+            $status = lc(rtrim($1));
         }
     }
 
@@ -429,7 +438,7 @@ sub extract_mdadm_raid_status {
     for my $line (@data_as_array) {
         chomp $line;
         if ($line =~ /^\s+State\s+:\s+(.+)$/) {
-            $status = $1;
+            $status = lc(rtrim($1));
         }
     }
 
