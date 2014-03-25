@@ -36,7 +36,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Скрипт не отправляет никакой информации кроме того, что перечислено выше
 
 Какие ОС поддерживаются:
-- Debian Linux 6, 7 и старше
+- Debian Linux 5 (только вручную), 6, 7 и старше
 - Centos Linux 5 (только вручную), 6 и старше
 - Parallels Cloud Server 6
 - Ubuntu 12.04 и старше
@@ -71,6 +71,12 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 
 Как осуществляется установка на CentOS 5?
 - До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
+
+Как осуществляется установка на Debian 5 Lenny?
+- До начала установки установите следующие пакеты (а вообще, пора обновляться!):
+```bash
+apt-get install -y libwww-perl libjson-any-perl libcrypt-ssleay-perl
+```
 
 Как выглядит выдача скрипта?
 ```bash
