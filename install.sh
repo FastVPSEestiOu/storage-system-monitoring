@@ -47,7 +47,7 @@ DISTRIB=
 
 check_n_install_debian_deps()
 {
-    echo "Installing Debian dependencies..."
+    echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
     
     apt-get update >/dev/null
     res=`apt-get install -y $DEBIAN_DEPS`
@@ -61,7 +61,7 @@ check_n_install_debian_deps()
 
 check_n_install_centos_deps()
 {
-    echo "Installing CentOS dependencies..."
+    echo "Installing CentOS dependencies: $CENTOS_DEPS ..."
     res=`yum install -y $CENTOS_DEPS`
     if [ $? -ne 0 ]
     then
