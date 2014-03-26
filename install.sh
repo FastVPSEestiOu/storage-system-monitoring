@@ -90,7 +90,7 @@ check_n_install_diag_tools()
         echo "Found Adaptec raid"
         adaptec_raid=1
     fi
-    if [ -n "`echo $parted_diag | grep -i lsi`" ]
+    if [ -n "`echo $parted_diag | egrep -i 'lsi|perc'`" ]
     then
         echo "Found LSI raid"
         lsi_raid=1
