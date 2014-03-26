@@ -134,7 +134,8 @@ check_n_install_diag_tools()
             ;;  
         esac
 
-        echo "Finished installation of diag utilities for Apactec raid"
+        echo "Finished installation of diag utilities for LSI raid"
+
     fi
 }
 
