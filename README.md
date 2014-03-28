@@ -72,6 +72,14 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 Возможна ли поддержка XXX YYY?
 - Разумеется, патчи приветствуются! 
 
+Как установить скрипт на Gentoo?
+- Для начала требуется установить все его зависимости, а после этого выполнить ручную установку:
+```bash
+emerge -atv sys-apps/smartmontools
+emerge -atv dev-perl/JSON
+emerge -atv dev-perl/libwww-perl
+```
+
 Как осуществляется установка на CentOS 5?
 - До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
 
