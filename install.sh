@@ -26,7 +26,7 @@ MONITORING_SCRIPT_NAME="storage_system_fastvps_monitoring.pl"
 MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/$MONITORING_SCRIPT_NAME"
 
 # Monitoring CRON file
-CRON_FILE=/etc/cron.hourly/storage-system-monitoring-fastvps
+CRON_FILE=/etc/cron.d/storage-system-monitoring-fastvps
 
 # Installation path
 INSTALL_TO=/usr/local/bin
@@ -141,14 +141,28 @@ check_n_install_diag_tools()
 
 install_monitoring_script()
 {
+    # Remove old monitoring run script
+    OLD_SCRIPT_RUNNER="/etc/cron.hourly/storage-system-monitoring-fastvps"
+    if [ -e "$OLD_SCRIPT_RUNNER" ] ; then
+        rm -f "$OLD_SCRIPT_RUNNER"
+    fi
+
     echo "Installing monitoring.pl into $INSTALL_TO..."
     wget --no-check-certificate $MONITORING_SCRIPT_URL -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
     chmod +x "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
 
     echo "Installing CRON task to $CRON_FILE"
-    echo "#!/bin/bash" > $CRON_FILE
-    echo "perl $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
-    chmod +x $CRON_FILE
+    echo "# FastVPS disk monitoring tool" > $CRON_FILE
+    echo "# https://github.com/FastVPSEestiOu/storage-system-monitoring" >> $CRON_FILE
+
+    # We should randomize run time for prevent ddos attacks to our gates
+    CRON_START_TIME=$RANDOM
+    # Limit random numbers by 59 minutes
+    let "CRON_START_TIME %= 59"
+   
+    echo "We tune cron task to run on $CRON_START_TIME minutes of every hour" 
+    echo "$CRON_START_TIME * * * * root perl $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
+    chmod 644 $CRON_FILE
 }
 
 
