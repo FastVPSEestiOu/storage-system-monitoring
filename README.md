@@ -49,7 +49,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Bash (установщик)
 
 Какие изменения в системе мы производим?
-- Мы создаем cron скрипт: /etc/cron.hourly/storage-system-monitoring-fastvps
+- Мы создаем cron скрипт: /etc/cron.d/storage-system-monitoring-fastvps
 - Мы размещаем утилиты arcconf, megaraid, а также скрипт storage_system_fastvps_monitoring.pl в папке /usr/local/bin 
 - Мы заменяем системный конфиг smartd /etc/smartd.conf (требуется для активации автозапуска S.M.A.R.T. short/long тестов)
 
