@@ -300,6 +300,11 @@ sub find_disks_without_parted {
             next;
         }
 
+        # skip device mapper fake devices
+        if ($block_device =~ m/^dm-\d+/) {
+            next;
+        }
+
         # Также исключаем из рассмотрения служебные не физические устройства по номеру major
         my $major = get_major(get_device_path($block_device));
     
