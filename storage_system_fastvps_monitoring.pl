@@ -517,6 +517,10 @@ sub send_disks_results {
     # get result
     my $ua = LWP::UserAgent->new();
     #$ua->agent("FastVPS disk monitoring version $VERSION");
+    
+    # Allow redirects for POST requests
+    push @{ $ua->requests_redirectable }, 'POST';    
+
     my $res = $ua->post($API_URL, Content => encode_json($request_data) );
     
     if ($res->is_success) {
