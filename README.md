@@ -82,6 +82,7 @@ emerge -atv dev-perl/libwww-perl
 ```
 
 Как установить скрипт на Citrix XenServer?
+- Нужно добавить Epel репозиторий соответствующей версии (требуется для perl-JSON)
 - Устанавливаем зависимости:
 ```bash
 yum install --enablerepo=base libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON
