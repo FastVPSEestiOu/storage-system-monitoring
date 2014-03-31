@@ -33,7 +33,7 @@ my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
 my $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli64';
 
 # API
-my $API_URL = 'https://bill2fast.com/api/server-state/storage';
+my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
 # Centos && Debian uses same path
 my $parted = "LANG=POSIX /sbin/parted";
