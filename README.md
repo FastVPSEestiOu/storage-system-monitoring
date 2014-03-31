@@ -43,6 +43,7 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Centos Linux 5 (только вручную), 6 и старше
 - Parallels Cloud Server 6
 - Ubuntu 12.04 и старше
+- Citrix XenServer 6 (только вручную)
 
 На каком языке написано ПО для мониторинга?
 - Perl (модуль мониторинга)
@@ -78,6 +79,12 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 emerge -atv sys-apps/smartmontools
 emerge -atv dev-perl/JSON
 emerge -atv dev-perl/libwww-perl
+```
+
+Как установить скрипт на Citrix XenServer?
+- Устанавливаем зависимости:
+```bash
+yum install --enablerepo=base libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON
 ```
 
 Как осуществляется установка на CentOS 5?

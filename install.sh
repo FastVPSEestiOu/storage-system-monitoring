@@ -231,6 +231,12 @@ then
     DISTRIB=debian
 fi
 
+# detect Citrix XenServer as CentOS
+if [ -n "`cat /etc/issue | grep -i \"Citrix XenServer\"`" ]
+then
+    DISTRIB=centos
+fi
+
 echo "We working on $DISTRIB $ARCH"
 
 # Dependencies installation
