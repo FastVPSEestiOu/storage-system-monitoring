@@ -49,7 +49,7 @@ check_n_install_debian_deps()
 {
     echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
     
-    apt-get update >/dev/null
+    apt-get update
     res=`apt-get install -y $DEBIAN_DEPS`
     if [ $? -ne 0 ]
     then
