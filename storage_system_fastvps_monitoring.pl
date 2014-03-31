@@ -21,7 +21,6 @@ use strict;
 use warnings;
 
 use LWP::UserAgent;
-use HTTP::Request::Common qw(GET POST);
 use JSON;
 use Data::Dumper;
 
@@ -514,12 +513,11 @@ sub send_disks_results {
         'version'         => $VERSION,
     ];
 
-    my $req = POST($API_URL, Content => encode_json($request_data) );
 
     # get result
     my $ua = LWP::UserAgent->new();
     #$ua->agent("FastVPS disk monitoring version $VERSION");
-    my $res = $ua->request($req);
+    my $res = $ua->post($API_URL, Content => encode_json($request_data) );
     
     if ($res->is_success) {
         #print "Data sent successfully\n";
