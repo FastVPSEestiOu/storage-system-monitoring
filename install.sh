@@ -237,6 +237,12 @@ then
     DISTRIB=centos
 fi
 
+#detect proxmox as debian
+if [ -n "`cat /etc/issue | grep -i \"Proxmox\"`" ]
+then
+    DISTRIB=debian
+fi
+
 echo "We working on $DISTRIB $ARCH"
 
 # Dependencies installation
