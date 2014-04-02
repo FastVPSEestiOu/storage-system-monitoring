@@ -27,9 +27,26 @@ use Data::Dumper;
 # Конфигурация
 my $VERSION = "1.0";
 
+my $os_architecture = "";
+
+# Detect Linux architecture
+if (-e '/lib64') {
+    $os_architecture = '64';
+} else {
+    $os_architecture = '32';
+}
+
 # diagnostic utilities
 my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
-my $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli64';
+
+
+my $LSI_UTILITY = '';
+
+if ($os_architecture eq '64') {
+    $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli64';
+} else {
+    $LSI_UTILITY = '/opt/MegaRAID/MegaCli/MegaCli';
+}
 
 # API
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
