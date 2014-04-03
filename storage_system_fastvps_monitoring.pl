@@ -62,6 +62,7 @@ my @major_blacklist = (
     1,   # это ram устройства
     7,   # это loop устройства
     182, # это openvz ploop диск
+    253, # device-mapper
 );
 
 # Обанаруживаем все устройства хранения
@@ -221,15 +222,32 @@ sub get_device_path {
 
 # Получаем major идентификатор блочного устройства в Linux
 sub get_major {
-    my $device_path = shift;
+    my $device = shift;
 
-    my $rdev = (stat $device_path)[6];
+    my $device_path = get_device_path($device);
+    my $major = '';
 
-    # Это платформо зависимый код!
-    # https://github.com/quattor/LC/blob/master/src/main/perl/Stat.pm
-    my $major = ($rdev >> 8) & 0xFF;
 
-    return $major;
+    if (-e $device_path) {
+        my $rdev = (stat $device_path)[6];
+
+        # Это платформо зависимый код!
+        # https://github.com/quattor/LC/blob/master/src/main/perl/Stat.pm
+        $major = ($rdev >> 8) & 0xFF;
+        
+        return $major;
+    } else {
+        # Для dm устройств и /dev/t у нас нету псевдо-устройст в /dev, поэтому мы можем попробовать получить major из sysfs
+        my $dev_info = file_get_contents("/sys/block/$$device/dev");
+
+        if ($dev_info =~ /(\d+):\d+/) { 
+            $major = $1;
+        
+            return $major;
+        } else {
+            return '';
+        }
+    }
 }
 
 sub in_array {
@@ -323,7 +341,7 @@ sub find_disks_without_parted {
         }
 
         # Также исключаем из рассмотрения служебные не физические устройства по номеру major
-        my $major = get_major(get_device_path($block_device));
+        my $major = get_major($block_device);
     
         if (in_array($major, @major_blacklist)) {
             next;
