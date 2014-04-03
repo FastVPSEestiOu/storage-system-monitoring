@@ -62,7 +62,8 @@ my @major_blacklist = (
     1,   # это ram устройства
     7,   # это loop устройства
     182, # это openvz ploop диск
-    253, # device-mapper
+    253, # device-mapper, но на Citrix XenServer это tapdev
+    252, # device-mapper на Citrix XenServer
 );
 
 # Обанаруживаем все устройства хранения
@@ -335,6 +336,8 @@ sub find_disks_without_parted {
             next;
         }
 
+        # эта проверка в общем-то уже не имеет смысла, так как DM устройства отсекаются по major, но как
+        # показал опыт Citrix XenServer особо одаренные разработчики иногда меняют стандартные major номера
         # skip device mapper fake devices
         if ($block_device =~ m/^dm-\d+/) {
             next;
