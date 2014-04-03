@@ -238,7 +238,7 @@ sub get_major {
         return $major;
     } else {
         # Для dm устройств и /dev/t у нас нету псевдо-устройст в /dev, поэтому мы можем попробовать получить major из sysfs
-        my $dev_info = file_get_contents("/sys/block/$$device/dev");
+        my $dev_info = file_get_contents("/sys/block/$device/dev");
 
         if ($dev_info =~ /(\d+):\d+/) { 
             $major = $1;
