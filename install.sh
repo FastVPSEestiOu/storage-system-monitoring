@@ -165,6 +165,15 @@ install_monitoring_script()
     chmod 644 $CRON_FILE
 }
 
+# We should enable smartd startup explicitly because it swhitched off by default
+enable_smartd_start_debian() {
+    egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null
+
+    if [ $? -ne 0 ]
+    then
+        echo "start_smartd=yes" >> /etc/default/smartmontools
+    fi
+}
 
 start_smartd_tests()
 {
@@ -182,6 +191,7 @@ start_smartd_tests()
     # restart service
     case $DISTRIB in
         debian)
+        enable_smartd_start_debian
         $SMARTD_INIT_DEBIAN restart
         ;;
 
