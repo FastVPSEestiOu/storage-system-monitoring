@@ -230,6 +230,11 @@ then
     DISTRIB=centos
 fi
 
+if [ -n "`cat /etc/issue | grep -i \"Fedora\"`" ]
+then
+    DISTRIB=centos
+fi
+
 if [ -n "`cat /etc/issue | grep -i \"Parallels\"`" ]
 then
     DISTRIB=centos
