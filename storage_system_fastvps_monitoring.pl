@@ -532,7 +532,7 @@ sub diag_disks {
                 $storage_status = extract_lsi_status($res);
             }
         } elsif ($type eq 'hard_disk') {
-            $cmd = "smartctl --all $device_name";
+            $cmd = "/usr/sbin/smartctl --all $device_name";
             $res = `$cmd 2>&1`;
         } else {
             warn "Unexpected type";
