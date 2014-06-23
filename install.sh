@@ -161,7 +161,7 @@ install_monitoring_script()
     let "CRON_START_TIME %= 59"
    
     echo "We tune cron task to run on $CRON_START_TIME minutes of every hour" 
-    echo "$CRON_START_TIME * * * * root perl $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
+    echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
     chmod 644 $CRON_FILE
 }
 
