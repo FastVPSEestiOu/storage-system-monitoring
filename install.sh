@@ -40,26 +40,22 @@ SMARTD_COMMAND="# smartd.conf by FastVPS
 ARCH=
 DISTRIB=
 
-check_n_install_debian_deps()
-{
+check_n_install_debian_deps() {
     echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
 
     apt-get update
     res=$(apt-get install -y "${DEBIAN_DEPS[@]}")
-    if (( $? != 0 ))
-    then
+    if (( $? != 0 )); then
         echo 'Something went wrong while installing dependencies. APT log:'
         echo "$res"
     fi
     echo 'Finished installation of debian dependencies.'
 }
 
-check_n_install_centos_deps()
-{
+check_n_install_centos_deps() {
     echo "Installing CentOS dependencies: $CENTOS_DEPS ..."
     res=$(yum install -y "${CENTOS_DEPS[@]}")
-    if (( $? != 0 ))
-    then
+    if (( $? != 0 )); then
         echo 'Something went wrong while installing dependencies. YUM log:'
         echo "$res"
     fi
@@ -67,8 +63,7 @@ check_n_install_centos_deps()
 }
 
 # Проверяем наличие аппаратный RAID контроллеров и в случае наличия устанавливаем ПО для их мониторинга
-check_n_install_diag_tools()
-{
+check_n_install_diag_tools() {
     # utilities have suffix of ARCH, i.e. arcconf32 or megacli64
     ADAPTEC_UTILITY=arcconf
     LSI_UTILITY=megacli
@@ -80,27 +75,23 @@ check_n_install_diag_tools()
     parted_diag=$(parted -ls)
 
     echo 'Checking hardware for LSI or Adaptec RAID controllers...'
-    if grep -i adaptec <<< "$parted_diag"
-    then
+    if grep -i adaptec <<< "$parted_diag"; then
         echo 'Found Adaptec raid'
         adaptec_raid=1
     fi
-    if egrep -i 'lsi|perc' <<< "$parted_diag"
-    then
+    if egrep -i 'lsi|perc' <<< "$parted_diag"; then
         echo 'Found LSI raid'
         lsi_raid=1
     fi
 
-    if (( adaptec_raid == 0 && lsi_raid == 0 ))
-    then
+    if (( adaptec_raid == 0 && lsi_raid == 0 )); then
         echo 'Hardware raid not found'
         return
     fi
 
     echo
 
-    if (( adaptec_raid == 1 ))
-    then
+    if (( adaptec_raid == 1 )); then
         echo 'Installing diag utilities for Adaptec raid...'
         wget --no-check-certificate "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/$ADAPTEC_UTILITY"
         chmod +x "$INSTALL_TO/$ADAPTEC_UTILITY"
@@ -109,8 +100,7 @@ check_n_install_diag_tools()
 
     echo
 
-    if (( lsi_raid == 1 ))
-    then
+    if (( lsi_raid == 1 )); then
         echo 'Installing diag utilities for LSI MegaRaid...'
 
         # Dependencies installation
@@ -134,8 +124,7 @@ check_n_install_diag_tools()
     fi
 }
 
-install_monitoring_script()
-{
+install_monitoring_script() {
     # Remove old monitoring run script
     OLD_SCRIPT_RUNNER='/etc/cron.hourly/storage-system-monitoring-fastvps'
     if [[ -e $OLD_SCRIPT_RUNNER ]]; then
@@ -163,19 +152,16 @@ install_monitoring_script()
 enable_smartd_start_debian() {
     egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null
 
-    if (( $? != 0 ))
-    then
+    if (( $? != 0 )); then
         echo "start_smartd=yes" >> /etc/default/smartmontools
     fi
 }
 
-start_smartd_tests()
-{
+start_smartd_tests() {
     echo -n "Creating config for smartd... "
 
     # Backup /etc/smartd.conf
-    if [[ ! -e /etc/smartd.conf.dist ]]
-    then
+    if [[ ! -e /etc/smartd.conf.dist ]]; then
         mv /etc/smartd.conf /etc/smartd.conf.dist
     fi
 
@@ -194,8 +180,7 @@ start_smartd_tests()
         ;;
     esac
 
-    if (( $? != 0 ))
-    then
+    if (( $? != 0 )); then
         echo 'smartd failed to start. This may be caused by absence of disks SMART able to monitor.'
         tail /var/log/daemon.log
     fi
@@ -205,19 +190,15 @@ start_smartd_tests()
 # Start installation procedure
 #
 
-if uname -a | grep 'i686\|-686' > /dev/null
-then
+if uname -a | grep 'i686\|-686' > /dev/null; then
     ARCH=32
-elif uname -a | grep 'amd64\|x86_64' > /dev/null
-then
+elif uname -a | grep 'amd64\|x86_64' > /dev/null; then
     ARCH=64
 fi
 
-if grep -i 'Debian\|Ubuntu\|Proxmox' < /etc/issue > /dev/null
-then
+if grep -i 'Debian\|Ubuntu\|Proxmox' < /etc/issue > /dev/null; then
     DISTRIB=debian
-elif grep -i 'CentOS\|Fedora\|Parallels\|Citrix XenServer' < /etc/issue > /dev/null
-then
+elif grep -i 'CentOS\|Fedora\|Parallels\|Citrix XenServer' < /etc/issue > /dev/null; then
     DISTRIB=centos
 fi
 
@@ -251,8 +232,7 @@ start_smartd_tests
 echo 'Send data to FastVPS...'
 "$INSTALL_TO/$MONITORING_SCRIPT_NAME" --cron
 
-if (( $? != 0 ))
-then
+if (( $? != 0 )); then
     echo 'Cannot run script in --cron mode'
 else
     echo 'Data sent successfully'
