@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # Это скрипт установщик для системы мониторинга дисковой подсистемы серверов компании FastVPS Eesti OU
 # Если у Вас есть вопросы по работе данной системы, рекомендуем обратиться по адресам:
@@ -8,19 +7,19 @@
 #
 
 # Данные пакеты обязательны к установке, так как используются скриптом мониторинга
-DEBIAN_DEPS="wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl"
-CENTOS_DEPS="wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON"
+DEBIAN_DEPS=(wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl)
+CENTOS_DEPS=(wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON)
 
 # init.d script для smartd
 SMARTD_INIT_DEBIAN=/etc/init.d/smartmontools
 SMARTD_INIT_CENTOS=/etc/init.d/smartd
 
-GITHUB_FASTVPS_URL="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring"
+GITHUB_FASTVPS_URL='https://raw.github.com/FastVPSEestiOu/storage-system-monitoring'
 
 # Diag utilities repo
-DIAG_UTILITIES_REPO="https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools"
+DIAG_UTILITIES_REPO='https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools'
 
-MONITORING_SCRIPT_NAME="storage_system_fastvps_monitoring.pl"
+MONITORING_SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
 
 # Monitoring script URL
 MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/$MONITORING_SCRIPT_NAME"
@@ -41,34 +40,30 @@ SMARTD_COMMAND="# smartd.conf by FastVPS
 ARCH=
 DISTRIB=
 
-#
-# Functions
-#
-
 check_n_install_debian_deps()
 {
     echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
-    
+
     apt-get update
-    res=`apt-get install -y $DEBIAN_DEPS`
-    if [ $? -ne 0 ]
+    res=$(apt-get install -y "${DEBIAN_DEPS[@]}")
+    if (( $? != 0 ))
     then
-        echo "Something went wrong while installing dependencies. APT log:"
-        echo $res
+        echo 'Something went wrong while installing dependencies. APT log:'
+        echo "$res"
     fi
-    echo "Finished installation of debian dependencies."
+    echo 'Finished installation of debian dependencies.'
 }
 
 check_n_install_centos_deps()
 {
     echo "Installing CentOS dependencies: $CENTOS_DEPS ..."
-    res=`yum install -y $CENTOS_DEPS`
-    if [ $? -ne 0 ]
+    res=$(yum install -y "${CENTOS_DEPS[@]}")
+    if (( $? != 0 ))
     then
-        echo "Something went wrong while installing dependencies. YUM log:"
-        echo $res
+        echo 'Something went wrong while installing dependencies. YUM log:'
+        echo "$res"
     fi
-    echo "Finished installation of CentOS dependencies."  
+    echo 'Finished installation of CentOS dependencies.'
 }
 
 # Проверяем наличие аппаратный RAID контроллеров и в случае наличия устанавливаем ПО для их мониторинга
@@ -82,41 +77,41 @@ check_n_install_diag_tools()
     adaptec_raid=0
 
     # флаг -m не используется, так как он не поддерживается в версии parted на CentOS 5
-    parted_diag=`parted -ls`
+    parted_diag=$(parted -ls)
 
-    echo "Checking hardware for LSI or Adaptec RAID controllers..."
-    if [ -n "`echo $parted_diag | grep -i adaptec`" ]
+    echo 'Checking hardware for LSI or Adaptec RAID controllers...'
+    if grep -i adaptec <<< "$parted_diag"
     then
-        echo "Found Adaptec raid"
+        echo 'Found Adaptec raid'
         adaptec_raid=1
     fi
-    if [ -n "`echo $parted_diag | egrep -i 'lsi|perc'`" ]
+    if egrep -i 'lsi|perc' <<< "$parted_diag"
     then
-        echo "Found LSI raid"
+        echo 'Found LSI raid'
         lsi_raid=1
     fi
 
-    if [ $adaptec_raid -eq 0 -a $lsi_raid -eq 0 ]
+    if (( adaptec_raid == 0 && lsi_raid == 0 ))
     then
-        echo "Hardware raid not found"
+        echo 'Hardware raid not found'
         return
     fi
 
-    echo ""
+    echo
 
-    if [ $adaptec_raid -eq 1 ]
+    if (( adaptec_raid == 1 ))
     then
-        echo "Installing diag utilities for Adaptec raid..."
+        echo 'Installing diag utilities for Adaptec raid...'
         wget --no-check-certificate "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/$ADAPTEC_UTILITY"
-        chmod +x "$INSTALL_TO/$ADAPTEC_UTILITY" 
-        echo "Finished installation of diag utilities for Apactec raid"
+        chmod +x "$INSTALL_TO/$ADAPTEC_UTILITY"
+        echo 'Finished installation of diag utilities for Apactec raid'
     fi
 
-    echo ""
+    echo
 
-    if [ $lsi_raid -eq 1 ]
+    if (( lsi_raid == 1 ))
     then
-        echo "Installing diag utilities for LSI MegaRaid..."
+        echo 'Installing diag utilities for LSI MegaRaid...'
 
         # Dependencies installation
         case $DISTRIB in
@@ -124,17 +119,17 @@ check_n_install_diag_tools()
                 wget --no-check-certificate "$DIAG_UTILITIES_REPO/megacli.deb" -O/tmp/megacli.deb
                 dpkg -i /tmp/megacli.deb
                 rm -f /tmp/megacli.deb
-            ;;  
+            ;;
             centos)
                 yum install -y "$DIAG_UTILITIES_REPO/megacli.rpm"
-            ;;  
-            *)  
-                echo "Can't install LSI tools for you distributive"
+            ;;
+            *)
+                echo 'Cannot install LSI tools for you distributive'
                 exit 1
-            ;;  
+            ;;
         esac
 
-        echo "Finished installation of diag utilities for LSI raid"
+        echo 'Finished installation of diag utilities for LSI raid'
 
     fi
 }
@@ -142,34 +137,33 @@ check_n_install_diag_tools()
 install_monitoring_script()
 {
     # Remove old monitoring run script
-    OLD_SCRIPT_RUNNER="/etc/cron.hourly/storage-system-monitoring-fastvps"
-    if [ -e "$OLD_SCRIPT_RUNNER" ] ; then
+    OLD_SCRIPT_RUNNER='/etc/cron.hourly/storage-system-monitoring-fastvps'
+    if [[ -e $OLD_SCRIPT_RUNNER ]]; then
         rm -f "$OLD_SCRIPT_RUNNER"
     fi
 
     echo "Installing monitoring.pl into $INSTALL_TO..."
-    wget --no-check-certificate $MONITORING_SCRIPT_URL -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
+    wget --no-check-certificate "$MONITORING_SCRIPT_URL" -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
     chmod +x "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
 
     echo "Installing CRON task to $CRON_FILE"
-    echo "# FastVPS disk monitoring tool" > $CRON_FILE
-    echo "# https://github.com/FastVPSEestiOu/storage-system-monitoring" >> $CRON_FILE
+    echo '# FastVPS disk monitoring tool' > "$CRON_FILE"
+    echo '# https://github.com/FastVPSEestiOu/storage-system-monitoring' >> "$CRON_FILE"
 
     # We should randomize run time for prevent ddos attacks to our gates
-    CRON_START_TIME=$RANDOM
     # Limit random numbers by 59 minutes
-    let "CRON_START_TIME %= 59"
-   
-    echo "We tune cron task to run on $CRON_START_TIME minutes of every hour" 
-    echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> $CRON_FILE
-    chmod 644 $CRON_FILE
+    ((CRON_START_TIME = RANDOM % 59))
+
+    echo "We tune cron task to run on $CRON_START_TIME minutes of every hour"
+    echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> "$CRON_FILE"
+    chmod 644 "$CRON_FILE"
 }
 
 # We should enable smartd startup explicitly because it switched off by default
 enable_smartd_start_debian() {
     egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null
 
-    if [ $? -ne 0 ]
+    if (( $? != 0 ))
     then
         echo "start_smartd=yes" >> /etc/default/smartmontools
     fi
@@ -180,29 +174,29 @@ start_smartd_tests()
     echo -n "Creating config for smartd... "
 
     # Backup /etc/smartd.conf
-    if [ ! -e /etc/smartd.conf.dist ]
+    if [[ ! -e /etc/smartd.conf.dist ]]
     then
         mv /etc/smartd.conf /etc/smartd.conf.dist
     fi
 
-    echo -e $SMARTD_COMMAND > /etc/smartd.conf
-    echo "done."
+    echo -e $SMARTD_COMMAND > /etc/smartd.conf # TODO what is that??
+    echo 'done.'
 
     # restart service
     case $DISTRIB in
         debian)
         enable_smartd_start_debian
-        $SMARTD_INIT_DEBIAN restart
+        "$SMARTD_INIT_DEBIAN" restart
         ;;
 
         centos)
-        $SMARTD_INIT_CENTOS restart
+        "$SMARTD_INIT_CENTOS" restart
         ;;
     esac
 
-    if [ $? -ne 0 ]
+    if (( $? != 0 ))
     then
-        echo "smartd failed to start. This may be caused by absence of disks SMART able to monitor."
+        echo 'smartd failed to start. This may be caused by absence of disks SMART able to monitor.'
         tail /var/log/daemon.log
     fi
 }
@@ -211,51 +205,20 @@ start_smartd_tests()
 # Start installation procedure
 #
 
-if [ -n "`echo \`uname -a\` | grep -e \"-686\|i686\"`" ]
+if uname -a | grep 'i686\|-686' > /dev/null
 then
     ARCH=32
-fi
-if [ -n "`echo \`uname -a\` | grep -e \"amd64\|x86_64\"`" ]
+elif uname -a | grep 'amd64\|x86_64' > /dev/null
 then
     ARCH=64
 fi
 
-if [ -n "`cat /etc/issue | grep -i \"Debian\"`" ]
+if grep -i 'Debian\|Ubuntu\|Proxmox' < /etc/issue > /dev/null
 then
     DISTRIB=debian
-fi
-
-if [ -n "`cat /etc/issue | grep -i \"CentOS\"`" ]
+elif grep -i 'CentOS\|Fedora\|Parallels\|Citrix XenServer' < /etc/issue > /dev/null
 then
     DISTRIB=centos
-fi
-
-if [ -n "`cat /etc/issue | grep -i \"Fedora\"`" ]
-then
-    DISTRIB=centos
-fi
-
-if [ -n "`cat /etc/issue | grep -i \"Parallels\"`" ]
-then
-    DISTRIB=centos
-fi
-
-# detect Ubuntu as Debian
-if [ -n "`cat /etc/issue | grep -i \"Ubuntu\"`" ]
-then
-    DISTRIB=debian
-fi
-
-# detect Citrix XenServer as CentOS
-if [ -n "`cat /etc/issue | grep -i \"Citrix XenServer\"`" ]
-then
-    DISTRIB=centos
-fi
-
-#detect proxmox as debian
-if [ -n "`cat /etc/issue | grep -i \"Proxmox\"`" ]
-then
-    DISTRIB=debian
 fi
 
 echo "We working on $DISTRIB $ARCH"
@@ -271,7 +234,7 @@ case $DISTRIB in
     ;;
 
     *)
-    echo "Can't determine OS. Exiting..."
+    echo 'Cannot determine OS. Exiting...'
     exit 1
     ;;
 esac
@@ -285,17 +248,15 @@ install_monitoring_script
 # Periodic smartd tests
 start_smartd_tests
 
-echo "Send data to FastVPS..."
-$INSTALL_TO/$MONITORING_SCRIPT_NAME --cron
+echo 'Send data to FastVPS...'
+"$INSTALL_TO/$MONITORING_SCRIPT_NAME" --cron
 
-if [ $? -ne 0 ] 
+if (( $? != 0 ))
 then
-    echo "Can't run script in --cron mode"
-else 
-    echo "Data sent successfully"
+    echo 'Cannot run script in --cron mode'
+else
+    echo 'Data sent successfully'
 fi
 
-echo "Checking disk system..."
-$INSTALL_TO/$MONITORING_SCRIPT_NAME --detect
-
-
+echo 'Checking disk system...'
+"$INSTALL_TO/$MONITORING_SCRIPT_NAME" --detect
