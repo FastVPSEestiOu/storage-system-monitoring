@@ -42,22 +42,17 @@ DISTRIB=
 
 check_n_install_debian_deps() {
     echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
-
     apt-get update
-    res=$(apt-get install -y "${DEBIAN_DEPS[@]}")
-    if (( $? != 0 )); then
-        echo 'Something went wrong while installing dependencies. APT log:'
-        echo "$res"
+    if ! apt-get install -y "${DEBIAN_DEPS[@]}"; then
+        echo 'Something went wrong while installing dependencies!' >&2
     fi
     echo 'Finished installation of debian dependencies.'
 }
 
 check_n_install_centos_deps() {
     echo "Installing CentOS dependencies: $CENTOS_DEPS ..."
-    res=$(yum install -y "${CENTOS_DEPS[@]}")
-    if (( $? != 0 )); then
-        echo 'Something went wrong while installing dependencies. YUM log:'
-        echo "$res"
+    if ! yum install -y "${CENTOS_DEPS[@]}"; then
+        echo 'Something went wrong while installing dependencies.' >&2
     fi
     echo 'Finished installation of CentOS dependencies.'
 }
@@ -150,9 +145,7 @@ install_monitoring_script() {
 
 # We should enable smartd startup explicitly because it switched off by default
 enable_smartd_start_debian() {
-    egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null
-
-    if (( $? != 0 )); then
+    if ! egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null; then
         echo "start_smartd=yes" >> /etc/default/smartmontools
     fi
 }
