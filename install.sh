@@ -41,7 +41,7 @@ ARCH=
 DISTRIB=
 
 check_n_install_debian_deps() {
-    echo "Installing Debian dependencies: $DEBIAN_DEPS ..."
+    echo "Installing Debian dependencies: ${DEBIAN_DEPS[@]} ..."
     apt-get update
     if ! apt-get install -y "${DEBIAN_DEPS[@]}"; then
         echo 'Something went wrong while installing dependencies!' >&2
@@ -50,7 +50,7 @@ check_n_install_debian_deps() {
 }
 
 check_n_install_centos_deps() {
-    echo "Installing CentOS dependencies: $CENTOS_DEPS ..."
+    echo "Installing CentOS dependencies: ${CENTOS_DEPS[@]} ..."
     if ! yum install -y "${CENTOS_DEPS[@]}"; then
         echo 'Something went wrong while installing dependencies.' >&2
     fi
@@ -109,7 +109,7 @@ check_n_install_diag_tools() {
                 yum install -y "$DIAG_UTILITIES_REPO/megacli.rpm"
             ;;
             *)
-                echo 'Cannot install LSI tools for you distributive'
+                echo 'Cannot install LSI tools for you distribution'
                 exit 1
             ;;
         esac
@@ -146,7 +146,7 @@ install_monitoring_script() {
 # We should enable smartd startup explicitly because it switched off by default
 enable_smartd_start_debian() {
     if ! grep -E '^start_smartd=yes' /etc/default/smartmontools > /dev/null; then
-        echo "start_smartd=yes" >> /etc/default/smartmontools
+        echo 'start_smartd=yes' >> /etc/default/smartmontools
     fi
 }
 
@@ -154,7 +154,7 @@ start_smartd_tests() {
     echo -n 'Creating config for smartd... '
 
     # Backup /etc/smartd.conf
-    if [[ ! -e /etc/smartd.conf.dist ]]; then
+    if [[ ! -e /etc/smartd.conf.dist ]]; then # TODO why?
         mv /etc/smartd.conf /etc/smartd.conf.dist
     fi
 
