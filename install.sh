@@ -122,9 +122,7 @@ check_n_install_diag_tools() {
 install_monitoring_script() {
     # Remove old monitoring run script
     OLD_SCRIPT_RUNNER='/etc/cron.hourly/storage-system-monitoring-fastvps'
-    if [[ -e $OLD_SCRIPT_RUNNER ]]; then
-        rm -f -- "$OLD_SCRIPT_RUNNER"
-    fi
+    rm -f -- "$OLD_SCRIPT_RUNNER"
 
     echo "Installing monitoring.pl into $INSTALL_TO..."
     wget --no-check-certificate "$MONITORING_SCRIPT_URL" -O "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
@@ -174,7 +172,7 @@ start_smartd_tests() {
     esac
 
     if (( $? != 0 )); then
-        echo 'smartd failed to start. This may be caused by absence of disks SMART able to monitor.'
+        echo 'smartd failed to start. This may be caused by absence of disks SMART able to monitor.' >&2
         tail /var/log/daemon.log
     fi
 }
@@ -183,9 +181,8 @@ start_smartd_tests() {
 # Start installation procedure
 #
 
-if uname -a | grep -E 'i686|-686' > /dev/null; then
-    ARCH=32
-elif uname -a | grep -E 'amd64|x86_64' > /dev/null; then
+ARCH=32
+if uname -a | grep -E 'amd64|x86_64' > /dev/null; then # XXX perhaps 'uname -m' is better?
     ARCH=64
 fi
 
@@ -195,7 +192,7 @@ elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < /etc/issue > /dev/nul
     DISTRIB=centos
 fi
 
-echo "We working on $DISTRIB $ARCH"
+echo "We are working on $DISTRIB $ARCH"
 
 # Dependencies installation
 case $DISTRIB in
