@@ -70,7 +70,7 @@ check_n_install_diag_tools() {
     parted_diag=$(parted -ls)
 
     echo 'Checking hardware for LSI or Adaptec RAID controllers...'
-    if grep -i adaptec <<< "$parted_diag"; then
+    if grep -i 'adaptec' <<< "$parted_diag"; then
         echo 'Found Adaptec raid'
         adaptec_raid=1
     fi
@@ -115,14 +115,12 @@ check_n_install_diag_tools() {
         esac
 
         echo 'Finished installation of diag utilities for LSI raid'
-
     fi
 }
 
 install_monitoring_script() {
     # Remove old monitoring run script
-    OLD_SCRIPT_RUNNER='/etc/cron.hourly/storage-system-monitoring-fastvps'
-    rm -f -- "$OLD_SCRIPT_RUNNER"
+    rm -f '/etc/cron.hourly/storage-system-monitoring-fastvps'
 
     echo "Installing monitoring.pl into $INSTALL_TO..."
     wget --no-check-certificate "$MONITORING_SCRIPT_URL" -O "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
@@ -132,7 +130,7 @@ install_monitoring_script() {
     echo '# FastVPS disk monitoring tool' > "$CRON_FILE"
     echo '# https://github.com/FastVPSEestiOu/storage-system-monitoring' >> "$CRON_FILE"
 
-    # We should randomize run time for prevent ddos attacks to our gates
+    # We should randomize run time to prevent ddos attacks to our gates
     # Limit random numbers by 59 minutes
     ((CRON_START_TIME = RANDOM % 59))
 
@@ -141,10 +139,10 @@ install_monitoring_script() {
     chmod 644 -- "$CRON_FILE"
 }
 
-# We should enable smartd startup explicitly because it switched off by default
+# We should enable smartd startup explicitly because it is switched off by default
 enable_smartd_start_debian() {
-    if ! grep -E '^start_smartd=yes' /etc/default/smartmontools > /dev/null; then
-        echo 'start_smartd=yes' >> /etc/default/smartmontools
+    if ! grep -E '^start_smartd=yes' '/etc/default/smartmontools' > /dev/null; then
+        echo 'start_smartd=yes' >> '/etc/default/smartmontools'
     fi
 }
 
