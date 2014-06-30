@@ -61,7 +61,7 @@ check_n_install_centos_deps() {
 check_n_install_diag_tools() {
     # utilities have suffix of ARCH, i.e. arcconf32 or megacli64
     ADAPTEC_UTILITY=arcconf
-    LSI_UTILITY=megacli
+    # LSI_UTILITY=megacli
 
     lsi_raid=0
     adaptec_raid=0
