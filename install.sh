@@ -32,10 +32,10 @@ INSTALL_TO='/usr/local/bin'
 
 # smartd config command to run repiodic tests (short/long)
 SMARTD_COMMAND="# smartd.conf by FastVPS
-\n# backup version of distrib file saved to /etc/smartd.conf.dist
-\n
-\n# Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00
-\nDEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)"
+# backup version of distrib file saved to /etc/smartd.conf.dist
+
+# Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00
+DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)"
 
 ARCH=
 DISTRIB=
@@ -156,7 +156,7 @@ start_smartd_tests() {
         mv /etc/smartd.conf /etc/smartd.conf.dist
     fi
 
-    echo -e $SMARTD_COMMAND > /etc/smartd.conf # TODO what is that??
+    echo "$SMARTD_COMMAND" > /etc/smartd.conf
     echo 'done.'
 
     # restart service
