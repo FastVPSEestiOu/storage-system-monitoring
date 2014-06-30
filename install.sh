@@ -11,8 +11,8 @@ DEBIAN_DEPS=(wget libstdc++5 parted smartmontools liblwp-useragent-determined-pe
 CENTOS_DEPS=(wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON)
 
 # init.d script для smartd
-SMARTD_INIT_DEBIAN=/etc/init.d/smartmontools
-SMARTD_INIT_CENTOS=/etc/init.d/smartd
+SMARTD_INIT_DEBIAN='/etc/init.d/smartmontools'
+SMARTD_INIT_CENTOS='/etc/init.d/smartd'
 
 GITHUB_FASTVPS_URL='https://raw.github.com/FastVPSEestiOu/storage-system-monitoring'
 
@@ -25,10 +25,10 @@ MONITORING_SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
 MONITORING_SCRIPT_URL="$GITHUB_FASTVPS_URL/master/$MONITORING_SCRIPT_NAME"
 
 # Monitoring CRON file
-CRON_FILE=/etc/cron.d/storage-system-monitoring-fastvps
+CRON_FILE='/etc/cron.d/storage-system-monitoring-fastvps'
 
 # Installation path
-INSTALL_TO=/usr/local/bin
+INSTALL_TO='/usr/local/bin'
 
 # smartd config command to run repiodic tests (short/long)
 SMARTD_COMMAND="# smartd.conf by FastVPS
@@ -74,7 +74,7 @@ check_n_install_diag_tools() {
         echo 'Found Adaptec raid'
         adaptec_raid=1
     fi
-    if egrep -i 'lsi|perc' <<< "$parted_diag"; then
+    if grep -Ei 'lsi|perc' <<< "$parted_diag"; then
         echo 'Found LSI raid'
         lsi_raid=1
     fi
@@ -88,8 +88,8 @@ check_n_install_diag_tools() {
 
     if (( adaptec_raid == 1 )); then
         echo 'Installing diag utilities for Adaptec raid...'
-        wget --no-check-certificate "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O"$INSTALL_TO/$ADAPTEC_UTILITY"
-        chmod +x "$INSTALL_TO/$ADAPTEC_UTILITY"
+        wget --no-check-certificate "$DIAG_UTILITIES_REPO/arcconf$ARCH" -O "$INSTALL_TO/$ADAPTEC_UTILITY"
+        chmod +x -- "$INSTALL_TO/$ADAPTEC_UTILITY"
         echo 'Finished installation of diag utilities for Apactec raid'
     fi
 
@@ -101,7 +101,7 @@ check_n_install_diag_tools() {
         # Dependencies installation
         case $DISTRIB in
             debian)
-                wget --no-check-certificate "$DIAG_UTILITIES_REPO/megacli.deb" -O/tmp/megacli.deb
+                wget --no-check-certificate "$DIAG_UTILITIES_REPO/megacli.deb" -O /tmp/megacli.deb
                 dpkg -i /tmp/megacli.deb
                 rm -f /tmp/megacli.deb
             ;;
@@ -123,12 +123,12 @@ install_monitoring_script() {
     # Remove old monitoring run script
     OLD_SCRIPT_RUNNER='/etc/cron.hourly/storage-system-monitoring-fastvps'
     if [[ -e $OLD_SCRIPT_RUNNER ]]; then
-        rm -f "$OLD_SCRIPT_RUNNER"
+        rm -f -- "$OLD_SCRIPT_RUNNER"
     fi
 
     echo "Installing monitoring.pl into $INSTALL_TO..."
-    wget --no-check-certificate "$MONITORING_SCRIPT_URL" -O"$INSTALL_TO/$MONITORING_SCRIPT_NAME"
-    chmod +x "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
+    wget --no-check-certificate "$MONITORING_SCRIPT_URL" -O "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
+    chmod +x -- "$INSTALL_TO/$MONITORING_SCRIPT_NAME"
 
     echo "Installing CRON task to $CRON_FILE"
     echo '# FastVPS disk monitoring tool' > "$CRON_FILE"
@@ -140,18 +140,18 @@ install_monitoring_script() {
 
     echo "We tune cron task to run on $CRON_START_TIME minutes of every hour"
     echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> "$CRON_FILE"
-    chmod 644 "$CRON_FILE"
+    chmod 644 -- "$CRON_FILE"
 }
 
 # We should enable smartd startup explicitly because it switched off by default
 enable_smartd_start_debian() {
-    if ! egrep '^start_smartd=yes' /etc/default/smartmontools > /dev/null; then
+    if ! grep -E '^start_smartd=yes' /etc/default/smartmontools > /dev/null; then
         echo "start_smartd=yes" >> /etc/default/smartmontools
     fi
 }
 
 start_smartd_tests() {
-    echo -n "Creating config for smartd... "
+    echo -n 'Creating config for smartd... '
 
     # Backup /etc/smartd.conf
     if [[ ! -e /etc/smartd.conf.dist ]]; then
@@ -183,15 +183,15 @@ start_smartd_tests() {
 # Start installation procedure
 #
 
-if uname -a | grep 'i686\|-686' > /dev/null; then
+if uname -a | grep -E 'i686|-686' > /dev/null; then
     ARCH=32
-elif uname -a | grep 'amd64\|x86_64' > /dev/null; then
+elif uname -a | grep -E 'amd64|x86_64' > /dev/null; then
     ARCH=64
 fi
 
-if grep -i 'Debian\|Ubuntu\|Proxmox' < /etc/issue > /dev/null; then
+if grep -Ei 'Debian|Ubuntu|Proxmox' < /etc/issue > /dev/null; then
     DISTRIB=debian
-elif grep -i 'CentOS\|Fedora\|Parallels\|Citrix XenServer' < /etc/issue > /dev/null; then
+elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < /etc/issue > /dev/null; then
     DISTRIB=centos
 fi
 
@@ -223,12 +223,10 @@ install_monitoring_script
 start_smartd_tests
 
 echo 'Send data to FastVPS...'
-"$INSTALL_TO/$MONITORING_SCRIPT_NAME" --cron
-
-if (( $? != 0 )); then
-    echo 'Cannot run script in --cron mode'
-else
+if "$INSTALL_TO/$MONITORING_SCRIPT_NAME" --cron; then
     echo 'Data sent successfully'
+else
+    echo 'Cannot run script in --cron mode'
 fi
 
 echo 'Checking disk system...'
