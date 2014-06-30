@@ -41,7 +41,7 @@ ARCH=
 DISTRIB=
 
 check_n_install_debian_deps() {
-    echo "Installing Debian dependencies: ${DEBIAN_DEPS[@]} ..."
+    echo "Installing Debian dependencies: ${DEBIAN_DEPS[*]} ..."
     apt-get update
     if ! apt-get install -y "${DEBIAN_DEPS[@]}"; then
         echo 'Something went wrong while installing dependencies!' >&2
@@ -50,7 +50,7 @@ check_n_install_debian_deps() {
 }
 
 check_n_install_centos_deps() {
-    echo "Installing CentOS dependencies: ${CENTOS_DEPS[@]} ..."
+    echo "Installing CentOS dependencies: ${CENTOS_DEPS[*]} ..."
     if ! yum install -y "${CENTOS_DEPS[@]}"; then
         echo 'Something went wrong while installing dependencies.' >&2
     fi
