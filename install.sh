@@ -184,9 +184,15 @@ if uname -a | grep -E 'amd64|x86_64' > /dev/null; then # XXX perhaps 'uname -m' 
     ARCH=64
 fi
 
-if grep -Ei 'Debian|Ubuntu|Proxmox' < /etc/issue > /dev/null; then
+if [ -f /etc/os-release ]; then
+    DISTRIBFILE=/etc/os-release
+else
+    DISTRIBFILE=/etc/issue
+fi
+
+if grep -Ei 'Debian|Ubuntu|Proxmox' < $DISTRIBFILE > /dev/null; then
     DISTRIB=debian
-elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < /etc/issue > /dev/null; then
+elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < $DISTRIBFILE > /dev/null; then
     DISTRIB=centos
 fi
 
