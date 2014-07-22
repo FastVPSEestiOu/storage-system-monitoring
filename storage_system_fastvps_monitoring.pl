@@ -330,6 +330,9 @@ sub get_device_size {
 sub find_disks_without_parted {
     opendir my $block_devices, $sysfs_block_path or die "Can't open path $sysfs_block_path";
 
+    # check for really existing md device due to false md0 detections in $sysfs_block_path
+    my $raid_devices_from_mdadm = `$mdadm --detail --scan`;
+
     my @disks = ();
     while (my $block_device = readdir($block_devices)) {
         # skip . and ..
@@ -387,9 +390,6 @@ sub find_disks_without_parted {
         }   
     
         # add to list
-
-        # check if really existing md device due to false md0 detections
-        my $raid_devices_from_mdadm = `$mdadm --detail --scan`;
         if ( $raid_devices_from_mdadm =~ /$device_name/ ) {
             my $tmp_disk = { 
                 "device_name" => $device_name,
