@@ -335,6 +335,8 @@ sub find_disks_without_parted {
 
     my @disks = ();
     while (my $block_device = readdir($block_devices)) {
+        my $to_push = 1;
+
         # skip . and ..
         if ($block_device =~ m/^\.+$/) {
             next;
@@ -390,16 +392,21 @@ sub find_disks_without_parted {
         }   
     
         # add to list
-        if ( $raid_devices_from_mdadm =~ /$device_name/ ) {
-            my $tmp_disk = { 
-                "device_name" => $device_name,
-                "size"        => $device_size,
-                "model"       => $model,
-                "type"        => ($is_raid ? 'raid' : 'hard_disk'),
-            };
+        my $tmp_disk = { 
+            "device_name" => $device_name,
+            "size"        => $device_size,
+            "model"       => $model,
+            "type"        => ($is_raid ? 'raid' : 'hard_disk'),
+        };
+
+        # check if we're working with really existing md device ( due to false md? detections )
+        if( $model eq 'md' && ! ( $raid_devices_from_mdadm =~ /$device_name/ ) ) {
+           $to_push = 0;
         }
 
-        push @disks, $tmp_disk;
+        if( $to_push == 1 ) {
+            push @disks, $tmp_disk;
+        }
     }
 
     return @disks;
