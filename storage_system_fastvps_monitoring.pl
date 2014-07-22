@@ -387,12 +387,17 @@ sub find_disks_without_parted {
         }   
     
         # add to list
-        my $tmp_disk = { 
-            "device_name" => $device_name,
-            "size"        => $device_size,
-            "model"       => $model,
-            "type"        => ($is_raid ? 'raid' : 'hard_disk'),
-        };  
+
+        # check if really existing md device due to false md0 detections
+        my $raid_devices_from_mdadm = `$mdadm --detail --scan`;
+        if ( $raid_devices_from_mdadm =~ /$device_name/ ) {
+            my $tmp_disk = { 
+                "device_name" => $device_name,
+                "size"        => $device_size,
+                "model"       => $model,
+                "type"        => ($is_raid ? 'raid' : 'hard_disk'),
+            };
+        }
 
         push @disks, $tmp_disk;
     }
