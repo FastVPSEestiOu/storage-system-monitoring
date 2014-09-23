@@ -186,7 +186,7 @@ fi
 
 if grep -Ei 'Debian|Ubuntu|Proxmox' < /etc/issue > /dev/null; then
     DISTRIB=debian
-elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < /etc/issue > /dev/null; then
+elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer|Scientific Linux' < /etc/issue > /dev/null; then
     DISTRIB=centos
 fi
 
