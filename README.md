@@ -92,6 +92,16 @@ yum install --enablerepo=base libstdc++ parted smartmontools perl-Crypt-SSLeay p
 Как осуществляется установка на CentOS 5?
 - До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
 
+Как осуществляется установка на CentOS 7?
+- До начала установки требуется установить 
+```bash
+yum install --enablerepo=base perl-LWP-Protocol-https
+```
+- После окончания установки требуется запустить smartd
+```bash
+systemctl start smartd
+```
+
 Как осуществляется установка на Debian 5 Lenny?
 - До начала установки установите следующие пакеты (а вообще, пора обновляться!):
 ```bash
