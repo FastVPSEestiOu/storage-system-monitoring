@@ -9,10 +9,12 @@
 # Данные пакеты обязательны к установке, так как используются скриптом мониторинга
 DEBIAN_DEPS=(wget libstdc++5 parted smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl)
 CENTOS_DEPS=(wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON)
+CENTOS7_DEPS=(wget libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON perl-LWP-Protocol-https)
 
 # init.d script для smartd
-SMARTD_INIT_DEBIAN='/etc/init.d/smartmontools'
-SMARTD_INIT_CENTOS='/etc/init.d/smartd'
+SMARTD_REST_DEBIAN='/etc/init.d/smartmontools restart'
+SMARTD_REST_CENTOS='/etc/init.d/smartd restart'
+SMARTD_REST_CENTOS7='/bin/systemctl restart smartd.service'
 
 GITHUB_FASTVPS_URL='https://raw.github.com/FastVPSEestiOu/storage-system-monitoring'
 
@@ -55,6 +57,14 @@ check_n_install_centos_deps() {
         echo 'Something went wrong while installing dependencies.' >&2
     fi
     echo 'Finished installation of CentOS dependencies.'
+}
+
+check_n_install_centos7_deps() {
+    echo "Installing CentOS 7 dependencies: ${CENTOS_DEPS[*]} ..."
+    if ! yum install -y "${CENTOS7_DEPS[@]}"; then
+        echo 'Something went wrong while installing dependencies.' >&2
+    fi
+    echo 'Finished installation of CentOS 7 dependencies.'
 }
 
 # Проверяем наличие аппаратный RAID контроллеров и в случае наличия устанавливаем ПО для их мониторинга
@@ -149,29 +159,39 @@ enable_smartd_start_debian() {
 start_smartd_tests() {
     echo -n 'Creating config for smartd... '
 
-    # Backup /etc/smartd.conf
-    if [[ ! -e /etc/smartd.conf.dist ]]; then # TODO why?
-        mv /etc/smartd.conf /etc/smartd.conf.dist
-    fi
-
-    echo "$SMARTD_COMMAND" > /etc/smartd.conf
-    echo 'done.'
-
-    # restart service
+    # creating config and restart service
     case $DISTRIB in
         debian)
+	if [[ ! -e /etc/smartd.conf.dist ]]; then # TODO why?
+        mv /etc/smartd.conf /etc/smartd.conf.dist
+    	fi
+    	echo "$SMARTD_COMMAND" > /etc/smartd.conf
         enable_smartd_start_debian
-        "$SMARTD_INIT_DEBIAN" restart
+        $SMARTD_REST_DEBIAN
         ;;
 
         centos)
-        "$SMARTD_INIT_CENTOS" restart
+	if [[ ! -e /etc/smartd.conf.dist ]]; then # TODO why?
+        mv /etc/smartd.conf /etc/smartd.conf.dist
+        fi
+        echo "$SMARTD_COMMAND" > /etc/smartd.conf
+        $SMARTD_REST_CENTOS
+        ;;
+
+	centos7)
+	if [[ ! -e /etc/smartmontools/smartd.conf.dist ]]; then # TODO why?
+        mv /etc/smartmontools/smartd.conf /etc/smartmontools/smartd.conf.dist
+        fi
+        echo "$SMARTD_COMMAND" > /etc/smartmontools/smartd.conf
+        $SMARTD_REST_CENTOS7
         ;;
     esac
 
+    echo 'done.'
+
     if (( $? != 0 )); then
         echo 'smartd failed to start. This may be caused by absence of disks SMART able to monitor.' >&2
-        tail /var/log/daemon.log
+        tail /var/log/messages
     fi
 }
 
@@ -186,8 +206,10 @@ fi
 
 if grep -Ei 'Debian|Ubuntu|Proxmox' < /etc/issue > /dev/null; then
     DISTRIB=debian
-elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer|Scientific Linux' < /etc/issue > /dev/null; then
+elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < /etc/issue > /dev/null; then
     DISTRIB=centos
+elif [ -f /etc/centos-release ] && grep -Ei 'CentOS\ Linux\ release\ 7' < /etc/centos-release > /dev/null; then
+    DISTRIB=centos7
 fi
 
 echo "We are working on $DISTRIB $ARCH"
@@ -200,6 +222,10 @@ case $DISTRIB in
 
     centos)
     check_n_install_centos_deps
+    ;;
+
+    centos7)
+    check_n_install_centos7_deps
     ;;
 
     *)
