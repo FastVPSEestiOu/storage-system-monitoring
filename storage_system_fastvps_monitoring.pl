@@ -62,6 +62,7 @@ my $sysfs_block_path = '/sys/block';
 my @major_blacklist = (
     1,   # это ram устройства
     7,   # это loop устройства
+    43,  # nbd http://en.wikipedia.org/wiki/Network_block_device
     182, # это openvz ploop диск
     253, # device-mapper, но на Citrix XenServer это tapdev
     252, # device-mapper на Citrix XenServer
