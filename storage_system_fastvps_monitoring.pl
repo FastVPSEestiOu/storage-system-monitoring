@@ -26,7 +26,7 @@ use JSON;
 use Data::Dumper;
 
 # Конфигурация
-my $VERSION = "1.0";
+my $VERSION = "1.1";
 
 my $os_architecture = "";
 
@@ -67,6 +67,11 @@ my @major_blacklist = (
     253, # device-mapper, но на Citrix XenServer это tapdev
     252, # device-mapper на Citrix XenServer
 );
+
+my $user_id = $<;
+if ( $user_id != 0 ) {
+    die "This program can only be run under root.\n";
+}
 
 # Обанаруживаем все устройства хранения
 # Также у нас есть старая версия, работающая исключительно на базе parted: find_disks()
