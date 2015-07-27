@@ -91,6 +91,10 @@ if (scalar @ARGV > 0 and $ARGV[0] eq '--cron') {
     $cron_run = 1;
 }
 
+my $adaptec_needed = 0;
+my $lsi_needed = 0;
+my $mdadm_needed = 0;
+
 if ($only_detect_drives) {
     for my $storage (@disks) {
         # Для обычных дисков понятия статуса нету
@@ -405,9 +409,9 @@ sub find_disks_without_parted {
 sub check_disk_utilities {
     my (@disks) = @_;
 
-    my $adaptec_needed = 0;
-    my $lsi_needed = 0;
-    my $mdadm_needed = 0;
+    #my $adaptec_needed = 0;
+    #my $lsi_needed = 0;
+    #my $mdadm_needed = 0;
 
     for my $storage (@disks) {
         # Adaptec
@@ -493,8 +497,22 @@ sub extract_mdadm_raid_status {
 sub diag_disks {
     my (@disks) = @_;
     my @result_disks = ();
+    my @lsi_ld_all;
+    my @adaptec_ld_all;
 
-    foreach my $storage (@disks) {
+    if ( $lsi_needed ) {
+        my $lsi_ld_all_res = `$LSI_UTILITY  -LDInfo -Lall -Aall 2>&1`; 
+        $lsi_ld_all_res =~ s/^\n\n//;
+        @lsi_ld_all = split /\n\n\n/, $lsi_ld_all_res;
+    }
+
+    if ( $adaptec_needed ) {
+        my $adaptec_ld_all_res = `$ADAPTEC_UTILITY getconfig 1 ld 2>&1`;
+        @adaptec_ld_all = split /\n\n/, $adaptec_ld_all_res;
+    }   
+
+
+    foreach my $storage (sort { $a->{'device_name'} cmp $b->{'device_name'} } @disks) {
         my $device_name = $storage->{device_name};
         my $type = $storage->{type};
         my $model = $storage->{model};
@@ -507,8 +525,12 @@ sub diag_disks {
         if ($type eq 'raid') {
             # adaptec
             if ($model eq "adaptec") {
-                $cmd = $ADAPTEC_UTILITY . " getconfig 1 ld";
-                $res = `$cmd 2>&1`;
+                if (scalar @adaptec_ld_all > 0 ) {
+                    $res = shift @adaptec_ld_all;
+                }
+                else {
+                    $res = "";
+                }
 
                 $storage_status = extract_adaptec_status($res);
             }   
@@ -525,11 +547,12 @@ sub diag_disks {
 
             # lsi (3ware)
             if($model eq "lsi") {
-                # it may be run with -L<num> for specific logical drive
-                $cmd = $LSI_UTILITY . " -LDInfo -Lall -Aall";
-        
-                $res = `$cmd 2>&1`;
-
+                if (scalar @lsi_ld_all > 0) {
+                    $res = shift @lsi_ld_all;
+                }
+                else {
+                    $res = "";
+                }
                 $storage_status = extract_lsi_status($res);
             }
         } elsif ($type eq 'hard_disk') {
