@@ -7,7 +7,7 @@ storage-system-monitoring
 
 Как установить скрипт мониторинга?
 ```bash
-wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O-|bash
+wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system-monitoring/master/install.sh -O /tmp/storage_install.sh && bash /tmp/storage_install.sh && rm /tmp/storage_install.sh
 ```
 
 Насколько безопасен скрипт?
