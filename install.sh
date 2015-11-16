@@ -145,7 +145,7 @@ install_monitoring_script() {
     ((CRON_START_TIME = RANDOM % 59))
 
     echo "We tune cron task to run on $CRON_START_TIME minutes of every hour"
-    echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron" >> "$CRON_FILE"
+    echo "$CRON_START_TIME * * * * root $INSTALL_TO/$MONITORING_SCRIPT_NAME --cron >/dev/null 2>&1" >> "$CRON_FILE"
     chmod 644 -- "$CRON_FILE"
 }
 
