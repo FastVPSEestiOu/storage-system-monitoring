@@ -366,6 +366,11 @@ sub find_disks_without_parted {
 
         # Код ниже ожидает вот в таком виде
         $model = "$vendor $model";
+	
+	# Исключаем из рассмотрения виртуальные устройства от idrac
+	if ( $model =~ m/^idrac\s+virtual\s+\w+$/ ) {
+		next;
+	}
         
         my $device_size = get_device_size($block_device);
 
