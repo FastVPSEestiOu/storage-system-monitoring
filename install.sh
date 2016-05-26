@@ -115,7 +115,7 @@ check_n_install_diag_tools() {
                 dpkg -i /tmp/megacli.deb
                 rm -f /tmp/megacli.deb
             ;;
-            centos)
+            centos*)
                 yum install -y "$DIAG_UTILITIES_REPO/megacli.rpm"
             ;;
             *)
