@@ -213,10 +213,10 @@ fi
 
 if grep -Ei 'Debian|Ubuntu|Proxmox' < $DISTRIBFILE > /dev/null; then
     DISTRIB=debian
+elif grep -Ei 'CentOS\ Linux\ 7' < $DISTRIBFILE > /dev/null; then
+    DISTRIB=centos7
 elif grep -Ei 'CentOS|Fedora|Parallels|Citrix XenServer' < $DISTRIBFILE > /dev/null; then
     DISTRIB=centos
-elif [ -f /etc/centos-release ] && grep -Ei 'CentOS\ Linux\ release\ 7' < /etc/centos-release > /dev/null; then
-    DISTRIB=centos7
 fi
 
 echo "We are working on $DISTRIB $ARCH"
