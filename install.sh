@@ -80,7 +80,7 @@ check_n_install_diag_tools() {
     parted_diag=$(parted -ls)
 
     echo 'Checking hardware for LSI or Adaptec RAID controllers...'
-    if grep -i 'adaptec' <<< "$parted_diag"; then
+    if grep -Ei 'adaptec|ASR8405' <<< "$parted_diag"; then
         echo 'Found Adaptec raid'
         adaptec_raid=1
     fi
