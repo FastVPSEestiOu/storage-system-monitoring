@@ -185,7 +185,7 @@ sub find_disks {
         my $is_raid = '';                 
    
         # adaptec
-        if($model =~ m/adaptec/i) {
+        if($model =~ m/adaptec/i or $model =~ m/ASR8405/i) {
             $model = 'adaptec';
             $is_raid = 1;
         }
@@ -382,7 +382,7 @@ sub find_disks_without_parted {
         my $raid_level = '';   
 
         # adaptec
-        if($model =~ m/adaptec/i) {
+        if($model =~ m/adaptec/i or $model =~ m/ASR8405/i) {
             $model = 'adaptec';
             $is_raid = 1;
         }   
