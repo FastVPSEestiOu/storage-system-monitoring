@@ -1,11 +1,9 @@
 #!/usr/bin/perl
 =description
-
 Authors:
 Alexander Kaidalov <kaidalov@fastvps.ru>
 Pavel Odintsov <odintsov@fastvps.ee>
 License: GPLv2
-
 =cut
 
 # TODO
@@ -38,8 +36,15 @@ if (-e '/lib64') {
 }
 
 # diagnostic utilities
-my $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
+my $ADAPTEC_UTILITY = '';
 
+if (-f '/usr/bin/arcconf') {
+    $ADAPTEC_UTILITY = '/usr/bin/arcconf';
+} else {
+    $ADAPTEC_UTILITY = '/usr/local/bin/arcconf';
+}
+
+my $SMARTCTL_UTILITY = '/usr/sbin/smartctl';
 
 my $LSI_UTILITY = '';
 
@@ -141,80 +146,6 @@ if (!$only_detect_drives && !$cron_run) {
 #
 # Functions
 #
-
-# Функция обнаружения всех дисковых устройств в системе
-sub find_disks {
-    # here we'll save disk => ( info, ... )
-    my @disks = ();
-    
-    # get list of disk devices with parted 
-    my @parted_output = `$parted -lms`;
-
-    if ($? != 0) {
-        die "Can't get parted output. Not installed?!";
-    }
- 
-    for my $line (@parted_output) {
-        chomp $line;
-        # skip empty line
-        next if $line =~ /^\s/;
-        next unless $line =~ m#^/dev#;   
-
-        # После очистки нам приходят лишь строки вида:
-        # /dev/sda:3597GB:scsi:512:512:gpt:DELL PERC H710P;
-        # /dev/sda:599GB:scsi:512:512:msdos:Adaptec Device 0;
-        # /dev/md0:4302MB:md:512:512:loop:Linux Software RAID Array;
-        # /dev/sdc:1500GB:scsi:512:512:msdos:ATA ST31500341AS;
-
-        # Отрезаем точку с запятой в конце
-        $line =~ s/;$//; 
-            
-        # get fields
-        my @fields = split ':', $line;
-        my $device_name = $fields[0];        
-        my $device_size = $fields[1]; 
-        my $model = $fields[6];
-
-        # Это виртуальные устройства в OpenVZ, их не нужно анализировать
-        if ($device_name =~ m#/dev/ploop\d+#) {
-            next;
-        }
-
-        # detect type (raid or disk)
-        my $type = 'disk';
-        my $is_raid = '';                 
-   
-        # adaptec
-        if($model =~ m/adaptec/i or $model =~ m/ASR8405/i) {
-            $model = 'adaptec';
-            $is_raid = 1;
-        }
-            
-        # Linux MD raid (Soft RAID)
-        if ($device_name =~ m/\/md\d+/) {
-            $model = 'md';
-            $is_raid = 1;
-        }
-
-        # LSI (3ware) / DELL PERC (LSI chips also)
-        if ($model =~ m/lsi/i or $model =~ m/PERC/i) {
-            $model = 'lsi';
-            $is_raid = 1;
-        }
-        
-        # add to list
-        my $tmp_disk = { 
-            "device_name" => $device_name,
-            "size"        => $device_size,
-            "model"       => $model,
-            "type"        => ($is_raid ? 'raid' : 'hard_disk'),
-        };  
-
-        push @disks, $tmp_disk;
-    }
-
-    return @disks;
-}
 
 # Убираем все пробельные символы в конце строки
 sub rtrim {
@@ -509,6 +440,10 @@ sub diag_disks {
     my @result_disks = ();
     my @lsi_ld_all;
     my @adaptec_ld_all;
+    my @hwraid_disk_smart;
+
+    my $adapctec_device_quantity = 0;
+
 
     if ( $lsi_needed ) {
         my $lsi_ld_all_res = `$LSI_UTILITY  -LDInfo -Lall -Aall 2>&1`; 
@@ -519,14 +454,13 @@ sub diag_disks {
     if ( $adaptec_needed ) {
         my $adaptec_ld_all_res = `$ADAPTEC_UTILITY getconfig 1 ld 2>&1`;
         @adaptec_ld_all = split /\n\n/, $adaptec_ld_all_res;
+        $adapctec_device_quantity = @{[$adaptec_ld_all_res =~ /Logical device number/g]};
     }   
-
 
     foreach my $storage (sort { $a->{'device_name'} cmp $b->{'device_name'} } @disks) {
         my $device_name = $storage->{device_name};
         my $type = $storage->{type};
         my $model = $storage->{model};
-
         my $res = '';
         my $cmd = '';
         # где можем, выцепляем состояние массива, актуально в первую очередь для RAID массивов
@@ -560,13 +494,14 @@ sub diag_disks {
                 if (scalar @lsi_ld_all > 0) {
                     $res = shift @lsi_ld_all;
                 }
+                
                 else {
                     $res = "";
                 }
                 $storage_status = extract_lsi_status($res);
             }
         } elsif ($type eq 'hard_disk') {
-            $cmd = "/usr/sbin/smartctl --all $device_name";
+            $cmd = "$SMARTCTL_UTILITY --all $device_name";
             $res = `$cmd 2>&1`;
         } else {
             warn "Unexpected type";
@@ -579,8 +514,128 @@ sub diag_disks {
         push @result_disks, $storage;
     }
 
+    # Если ранее были обнаружены аппаратные raid-ы, то отдельно пытаемся получить smart-ы дисков, которые в них воткнуты. И добавляем их в общий массив с устройствами.
+    # Для adaptec отдельно передаем кол-во созданных массивов т.к. от этого будет зависить номер sg* устройства, которое является диском, а не массивом..
+    if ( $lsi_needed ) {
+        @hwraid_disk_smart = get_smart_disk('lsi');
+        push @result_disks, @hwraid_disk_smart;
+        }
+    if ($adaptec_needed) {
+        @hwraid_disk_smart = get_smart_disk('adaptec', $adapctec_device_quantity);
+        push @result_disks, @hwraid_disk_smart;
+    }
+    
     return @result_disks;
 }
+
+
+sub get_smart_disk{
+    my $raid_control = shift;
+    my $adapctec_device_quantity = shift;
+    my %pd_type;
+    my @disk_hwraid_type_number;
+    my @disk_raid_list;
+    my $smart_result;
+    my $smart_all_result;
+    my ($device_name, $device_size, $model, $diag);
+    
+# Получаем номера дисков в raid, которые затем будем подсовывать smartctl-у. Также, тут поднимается важный вопрос: "SAS или не SAS?".
+    if ($raid_control =~ /lsi/){
+        my $res = `$LSI_UTILITY -LdpdInfo -a0 -NoLog|grep -E 'Device Id:|Inquiry Data:|PD Type:' `;
+        $res =~ s/\nPD Type/ PD Type/g;
+        $res =~ s/\nInquiry/ Inquiry/g;
+
+        for(split(/\n/,$res)){
+            if(/ SSD /){
+                s/ SATA / SSD /;
+            }
+            chomp($_);
+            /PD Type: ([A-Z]{3,4}) /;
+            my $pd = $1;
+            s/Device Id: //;
+            s/ PD Type.*//;
+            push @disk_hwraid_type_number,$_;
+            $pd_type{$_} = $pd;
+        }
+    }elsif( $raid_control =~ /adaptec/){
+        my $res=`$ADAPTEC_UTILITY getconfig 1 pd  | grep -E "Device #|Speed|SSD" | sed 's/  //g'`;
+        $res =~ s/\n Transfer/ Transfer/g;
+        $res =~ s/\n SSD/ SSD/g;
+
+        for(split(/\n/,$res)){
+
+            if (/ Yes /){
+                s/ SATA / SSD /;
+            }
+            chomp($_);
+            if (/Device #(\d+) Transfer Speed : (\w+) / ) {
+                push @disk_hwraid_type_number,$1;
+                $pd_type{$1} = $2;
+            } else {
+                /Device #(\d+)\s+/;
+                push @disk_hwraid_type_number,$1;
+                $pd_type{$1} = "SAS";
+            }
+        }
+    }else{
+        warn("It is not LSI or Adaptec - we didnt know to do!\n");
+    }
+    # Пытаемся получить smart-ы для каждого найденного в raid-е диска.
+    for my $disk_number (@disk_hwraid_type_number) {
+        if ($pd_type{$disk_number} =~ /SAS/) {
+            $smart_result = get_sas_smart_info($disk_number, $raid_control, $adapctec_device_quantity);
+        } else {
+            $smart_result = get_ssd_smart_info($disk_number, $raid_control, $adapctec_device_quantity);
+        }
+        $device_name = $disk_number;
+        $model = $raid_control;
+        $diag = $smart_result;
+    # Данный хэш нужен, чтобы данные о каждом диске, добавлялись в общий массив, как отдельное устройство, а не часть raid-массива.
+        my $tmp_disk = { 
+            "device_name" => $device_name,
+            "size"        => 'undefined',
+            "model"       => $model,
+            "type"        => 'hard_disk',
+            "status"      => 'undefined',
+            "diag"        => $diag,
+        };
+        push @disk_raid_list, $tmp_disk;
+    }
+    return @disk_raid_list;
+}
+
+#Получаем и НЕ парсим инфу с SSD диска
+sub get_ssd_smart_info{
+    my $disk_number = shift;
+    my $hw_raid = shift;
+    my $smart_result;
+    
+    if ($hw_raid eq "lsi"){
+       $smart_result = `$SMARTCTL_UTILITY -a  -d sat+megaraid,$disk_number /dev/sda`;
+    }else{
+        my $adapctec_device_quantity = shift;
+        my $sg_number=$disk_number+$adapctec_device_quantity;
+        $smart_result = `$SMARTCTL_UTILITY -a -d sat  /dev/sg$sg_number`;
+    }
+    return "$smart_result\n";
+}
+
+#Получаем и НЕ парсим инфу с SAS диска
+sub get_sas_smart_info{
+    my $disk_number = shift;
+    my $hw_raid = shift;
+    my $smart_result;
+
+    if ($hw_raid eq "lsi"){
+        $smart_result=`$SMARTCTL_UTILITY -a  -d megaraid,$disk_number /dev/sda`;
+    }else{
+        my $adapctec_device_quantity = shift;
+        my $sg_number=$disk_number+$adapctec_device_quantity;
+        $smart_result=`$SMARTCTL_UTILITY -a  /dev/sg$sg_number`;
+    }
+    return "$smart_result\n";
+}
+
 
 # Send disks diag results
 sub send_disks_results {
@@ -609,4 +664,3 @@ sub send_disks_results {
         exit 1;
     }
 }
-
