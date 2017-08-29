@@ -15,8 +15,7 @@ TXT_RST='\e[0m'
 
 # Path for binaries
 BIN_PATH='/usr/local/bin'
-#REPO_PATH='https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master'
-REPO_PATH='https://raw.githubusercontent.com/lilalkor/storage-system-monitoring/install_rewrite'
+REPO_PATH='https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master'
 SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
 CRON_FILE='/etc/cron.d/storage-system-monitoring-fastvps'
 SMARTD_HEADER='# smartd.conf by FastVPS
