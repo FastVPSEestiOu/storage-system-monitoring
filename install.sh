@@ -454,8 +454,11 @@ _restart_smartd()
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
-        Debian[6-7]|Ubuntu12|Ubuntu14|CentOS6 )
+        Debian[6-7]|CentOS6 )
             restart_cmd='/etc/init.d/smartd restart'
+        ;;
+        Ubuntu12|Ubuntu14 )
+            restart_cmd='/etc/init.d/smartmontools restart'
         ;;
         * )
             echo -e "\nDon't know how to restart smartd on that OS: ${TXT_YLW}${os}${TXT_RST} "
