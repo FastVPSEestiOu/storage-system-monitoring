@@ -97,7 +97,7 @@ _detect_os()
             fi
         fi
     fi
-    echo "${os}"        
+    echo "${os}"
 }
 
 # Detect architecture
@@ -112,7 +112,7 @@ _detect_arch()
     else
         arch=32
     fi
-    
+
     echo $arch
 }
 
@@ -150,13 +150,13 @@ _install_deps()
     # Check if we have packages needed
     local pkg=''
     local result=''
-    
+
     for pkg in ${PKG_DEPS[$os_type]}; do
         if ! _check_pkg $os_type $pkg ; then
             pkgs_to_install+=("$pkg")
         fi
     done
-    
+
     if [[ ${#pkgs_to_install[@]} -eq 0 ]]; then
         return 0
     else
@@ -184,7 +184,7 @@ _check_pkg()
     local pkg=$2
     local result=''
 
-    case $os_type in 
+    case $os_type in
         deb )
             if dpkg-query -W -f='\${Status}' $pkg 2>&1 | grep -qE '^(\$install ok installed)+$'; then
                 return 0
@@ -215,7 +215,7 @@ _dl_and_check()
     local result=()
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget -q "$remote_path" -O "$local_path") ); then
+    if IFS=$'\n' result=( $(wget --no-check-certificate -q "$remote_path" -O "$local_path") ); then
         return 0
 
     # And output it, if we had nonzero exit code
@@ -242,11 +242,11 @@ _install_raid_tools()
     # Detect RAID
     local sys_block_check=''
     sys_block_check=$(cat /sys/block/*/device/vendor /sys/block/*/device/model | grep -oEm1 'Adaptec|LSI|PERC|ASR8405')
-        
+
     # Select utility to install
-    case $sys_block_check in 
+    case $sys_block_check in
         # arcconf for Adaptec
-        
+
         Adaptec|ASR8405 )
             raid_type='adaptec'
             util_path="${bin_path}/arcconf"
@@ -294,14 +294,14 @@ _install_raid_tools()
             echo -e "\nUnknown RAID type: ${TXT_YLW}${sys_block_check}${TXT_RST}. Exiting."
             return 1
         ;;
-    esac        
+    esac
 
 
     # Set raid type for smartd
     RAID_TYPE="$raid_type"
 
     # Download selected utility
-    case $raid_type in 
+    case $raid_type in
         soft )
             return 0
         ;;
@@ -320,7 +320,7 @@ _install_raid_tools()
             echo -e "\nUnknown RAID type: ${TXT_YLW}${raid_type}${TXT_RST}. Exiting."
             return 1
         ;;
-    esac        
+    esac
 }
 
 
@@ -359,14 +359,14 @@ _set_cron()
     local cron_minutes=$3
 
     local cron_text=''
-    
+
     read -d '' cron_text <<EOF
 # FastVPS disk monitoring tool
 # https://github.com/FastVPSEestiOu/storage-system-monitoring
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 $cron_minutes * * * * root $script_local --cron >/dev/null 2>&1
 EOF
-    
+
     echo "$cron_text" > "$cron_file"
     chmod 644 -- "$cron_file"
 }
@@ -436,7 +436,7 @@ EOF
     if echo "$smartd_conf" > "$smartd_conf_file"; then
         echo -ne "and filled ${TXT_YLW}${smartd_conf_file}${TXT_RST} "
         return 0
-    else 
+    else
         return 1
     fi
 }
@@ -447,17 +447,17 @@ _restart_smartd()
 {
     local os=$1
     local restart_cmd=''
-    
+
     case $os in
         # Systemctl in new OS
         Debian[8-9]|CentOS7|Ubuntu16 )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
-        Debian[6-7]|CentOS6 )
+        Debian7|CentOS6 )
             restart_cmd='/etc/init.d/smartd restart'
         ;;
-        Ubuntu12|Ubuntu14 )
+        Debian6|Ubuntu12|Ubuntu14 )
             restart_cmd='/etc/init.d/smartmontools restart'
         ;;
         * )
