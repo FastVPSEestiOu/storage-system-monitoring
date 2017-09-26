@@ -228,6 +228,23 @@ _dl_and_check()
     fi
 }
 
+_install_smartctl()
+{
+    local bin_path=$1
+    local repo_path=$2
+    local arch=$3
+
+    local util_path="${bin_path}/smartctl"
+    local dl_path="${repo_path}/raid_monitoring_tools/smartctl${arch}"
+
+    if _dl_and_check "$dl_path" "$util_path"; then
+        chmod +x "$util_path"
+        echo -ne "We have installed ${TXT_YLW}${util_path}${TXT_RST} "
+        return 0
+    else
+        return 1
+    fi
+}
 # Install RAID tools if needed
 _install_raid_tools()
 {
@@ -520,6 +537,10 @@ _echo_result $?
 
 echo -ne "Installing monitoring script... "
 _install_script "$BIN_PATH" "$REPO_PATH" "$SCRIPT_NAME" "$CRON_FILE" "$CRON_MINUTES"
+_echo_result $?
+
+echo -ne "Installing smartctl... "
+_install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH"
 _echo_result $?
 
 echo -ne "Setting smartd... "
