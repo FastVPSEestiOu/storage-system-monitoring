@@ -38,11 +38,13 @@ RAID_TYPE=''
 # Dependencies
 declare -A PKG_DEPS
 PKG_DEPS["deb"]='wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl'
+PKG_DEPS["deb_old"]='wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl'
 PKG_DEPS["rpm_old"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON'
 PKG_DEPS["rpm_new"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON perl-LWP-Protocol-https'
 
 declare -A PKG_INSTALL
 PKG_INSTALL["deb"]="apt-get update -qq && apt-get install -qq"
+PKG_INSTALL["deb_old"]="apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -qq"
 PKG_INSTALL["rpm_old"]='yum install -q -y'
 PKG_INSTALL["rpm_new"]='yum install -q -y'
 
@@ -123,7 +125,10 @@ _select_os_type()
     local os_type=''
 
     case $os in
-        Debian*|Ubuntu* )
+        Debian6 )
+            os_type='deb_old'
+        ;;
+        Debian[7-9]|Ubuntu* )
             os_type='deb'
         ;;
         CentOS6 )
@@ -212,10 +217,23 @@ _dl_and_check()
 {
     local remote_path=$1
     local local_path=$2
+    local os=$OS
     local result=()
+    local wget_param=''
+
+    # Adding --no-check-certificate on old OS
+    case $os in
+        Debian6 )
+            wget_param='--no-check-certificate'
+        ;;
+        * )
+            wget_param=''
+        ;;
+    esac
+
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget --no-check-certificate -q "$remote_path" -O "$local_path") ); then
+    if IFS=$'\n' result=( $(wget $wget_param -q "$remote_path" -O "$local_path") ); then
         return 0
 
     # And output it, if we had nonzero exit code
@@ -449,15 +467,16 @@ _restart_smartd()
     local restart_cmd=''
 
     case $os in
-        # Systemctl in new OS
+        # systemctl on new OS
         Debian[8-9]|CentOS7|Ubuntu16 )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
-        Debian7|CentOS6 )
+        CentOS6 )
             restart_cmd='/etc/init.d/smartd restart'
+        ## On Debian 7 we should always have /etc/init.d/smartmontools while /etc/init.d/smartd can be removed when using backports
         ;;
-        Debian6|Ubuntu12|Ubuntu14 )
+        Debian[6-7]|Ubuntu12|Ubuntu14 )
             restart_cmd='/etc/init.d/smartmontools restart'
         ;;
         * )
@@ -481,6 +500,44 @@ _restart_smartd()
 
 }
 
+# Enable autostart of smartd
+_enable_smartd_autostart()
+{
+    local os=$1
+    local enable_cmd=''
+
+    case $os in
+        # systemctl on new OS
+        Debian[8-9]|CentOS7|Ubuntu16 )
+            enable_cmd='systemctl enable smartd.service'
+        ;;
+        # chkconfig on CentOS 6
+        CentOS6 )
+            enable_cmd='chkconfig smartd on'
+        ;;
+        # update-rc.d on sysv/upstart deb-based OS
+        Debian[6-7]|Ubuntu12|Ubuntu14 )
+            enable_cmd='update-rc.d smartmontools defaults'
+        ;;
+        * )
+            echo -e "\nDon't know how to enable smartd autostart on that OS: ${TXT_YLW}${os}${TXT_RST} "
+            return 1
+        ;;
+    esac
+
+    # Catch error in variable
+    if IFS=$'\n' result=( $(eval "$enable_cmd" 2>&1) ); then
+        return 0
+
+    # And output it, if we had nonzero exit code
+    else
+        echo
+        for (( i=0; i<${#result[@]}; i++ )); do
+            echo "${result[i]}";
+        done
+        return 1
+    fi
+}
 
 # Run monitoring script
 _run_script()
@@ -528,6 +585,10 @@ _echo_result $?
 
 echo -ne "Starting smartd... "
 _restart_smartd "$OS"
+_echo_result $?
+
+echo -ne "Enabling smartd autostart... "
+_enable_smartd_autostart "$OS"
 _echo_result $?
 
 echo -ne "Sending data to FASTVPS monitoring server... "
