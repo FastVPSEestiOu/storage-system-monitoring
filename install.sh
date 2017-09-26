@@ -15,13 +15,26 @@ TXT_RST='\e[0m'
 
 # Path for binaries
 BIN_PATH='/usr/local/bin'
+
+# Path of our repo, used for downloads
 REPO_PATH='https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master'
+
+# Name of our script
 SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
+
+# Path of our cron task
 CRON_FILE='/etc/cron.d/storage-system-monitoring-fastvps'
+
+# Static header for our smartd.conf
 SMARTD_HEADER='# smartd.conf by FastVPS
 # backup version of distrib file saved to /etc/smartd.conf.dist
 # Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00'
-SMARTD_SUFFIX='dist'
+
+# Suffix we add to moved smartd.conf
+SMARTD_SUFFIX='fastvps_backup'
+
+# Stable smartctl version (SVN revision)
+SMARTCTL_STABLE='r4318'
 
 # Smartd config path
 declare -A SMARTD_CONF_FILE
@@ -224,16 +237,16 @@ _dl_and_check()
     # Adding --no-check-certificate on old OS
     case $os in
         Debian6 )
-            wget_param='--no-check-certificate'
+            wget_param='--no-check-certificate --quiet'
         ;;
         * )
-            wget_param=''
+            wget_param='--quiet'
         ;;
     esac
 
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget $wget_param -q "$remote_path" -O "$local_path") ); then
+    if IFS=$'\n' result=( $(wget $wget_param "$remote_path" --output-document="$local_path") ); then
         return 0
 
     # And output it, if we had nonzero exit code
@@ -341,6 +354,34 @@ _install_raid_tools()
     esac
 }
 
+# Install new smartctl binary, if we have too old one
+_install_smartctl()
+{
+    local bin_path=$1
+    local repo_path=$2
+    local arch=$3
+    local smartctl_stable=$4
+
+    local smartctl_current=''
+
+    local util_path="${bin_path}/smartctl"
+    local dl_path="${repo_path}/raid_monitoring_tools/smartctl${arch}"
+
+    smartctl_current=$(smartctl --version | awk '/r[0-9]{4}/ {print $4}')
+
+    # If current version is lower then stable, download a new one
+    if [[ ${smartctl_current#r} -lt ${smartctl_stable#r} ]]; then
+        if _dl_and_check "$dl_path" "$util_path"; then
+            chmod +x "$util_path"
+            echo -ne "We have installed ${TXT_YLW}${util_path}${TXT_RST} "
+            return 0
+        else
+            return 1
+        fi
+    else
+        return 0
+    fi
+}
 
 # Install monitoring script
 _install_script()
@@ -446,13 +487,16 @@ EOF
 
     if [[ ! -e "${smartd_conf_file}.${smartd_suffix}" ]]; then
         if mv "$smartd_conf_file" "${smartd_conf_file}.${smartd_suffix}"; then 
-            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_file}.${smartd_suffix}${TXT_RST} "
+            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_file}.${smartd_suffix}${TXT_RST}. "
         else
             return 1
         fi
+    else
+        echo -ne "We already have ${TXT_YLW}${smartd_conf_file}.${smartd_suffix}${TXT_RST} here. Skipping backup creation. "
     fi
+    
     if echo "$smartd_conf" > "$smartd_conf_file"; then
-        echo -ne "and filled ${TXT_YLW}${smartd_conf_file}${TXT_RST} "
+        echo -ne "Filled ${TXT_YLW}${smartd_conf_file}${TXT_RST} "
         return 0
     else
         return 1
@@ -573,6 +617,10 @@ _echo_result $?
 
 echo -ne "Checking for hardware RAID... "
 _install_raid_tools "$BIN_PATH" "$REPO_PATH" "$ARCH"
+_echo_result $?
+
+echo -ne "Installing new smartctl if needed... "
+_install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH" "$SMARTCTL_STABLE"
 _echo_result $?
 
 echo -ne "Installing monitoring script... "
