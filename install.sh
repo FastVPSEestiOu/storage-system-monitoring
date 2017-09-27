@@ -438,8 +438,10 @@ _set_smartd()
     local smartd_header=$2
     local os_type=$3
     local smartd_suffix=$4
+    local pid=$$
 
     local smartd_conf_file=${SMARTD_CONF_FILE[$os_type]}
+    local smartd_conf_backup=${smartd_conf_file}.${smartd_suffix}.${pid}
 
     local smartd_conf=''
     local drive=''
@@ -485,14 +487,14 @@ $smartd_header
 ${lines[*]}
 EOF
 
-    if [[ ! -e "${smartd_conf_file}.${smartd_suffix}" ]]; then
-        if mv "$smartd_conf_file" "${smartd_conf_file}.${smartd_suffix}"; then 
-            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_file}.${smartd_suffix}${TXT_RST}. "
+    if [[ ! -e "$smartd_conf_backup" ]]; then
+        if mv "$smartd_conf_file" "$martd_conf_backup"; then 
+            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST}. "
         else
             return 1
         fi
     else
-        echo -ne "We already have ${TXT_YLW}${smartd_conf_file}.${smartd_suffix}${TXT_RST} here. Skipping backup creation. "
+        echo -ne "We already have ${TXT_YLW}${smartd_conf_backup}${TXT_RST} here. Skipping backup creation. "
     fi
     
     if echo "$smartd_conf" > "$smartd_conf_file"; then
