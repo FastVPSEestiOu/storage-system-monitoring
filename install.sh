@@ -488,8 +488,8 @@ ${lines[*]}
 EOF
 
     if [[ ! -e "$smartd_conf_backup" ]]; then
-        if mv "$smartd_conf_file" "$martd_conf_backup"; then 
-            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST}. "
+        if mv "$smartd_conf_file" "$smartd_conf_backup"; then 
+            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST} "
         else
             return 1
         fi
