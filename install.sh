@@ -170,7 +170,7 @@ _install_deps()
     local result=''
 
     for pkg in ${PKG_DEPS[$os_type]}; do
-        if ! _check_pkg $os_type $pkg ; then
+        if ! _check_pkg "$os_type" "$pkg" ; then
             pkgs_to_install+=("$pkg")
         fi
     done
@@ -181,7 +181,7 @@ _install_deps()
         echo -ne "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ... "
 
         # Catch error in variable
-        if IFS=$'\n' result=( $(eval "${PKG_INSTALL[$os_type]} ${pkgs_to_install[@]}" 2>&1) ); then
+        if IFS=$'\n' result=( $(eval "${PKG_INSTALL[$os_type]} ${pkgs_to_install[*]}" 2>&1) ); then
             return 0
 
         # And output it, if we had nonzero exit code
@@ -200,18 +200,17 @@ _check_pkg()
 {
     local os_type=$1
     local pkg=$2
-    local result=''
 
     case $os_type in
         deb )
-            if dpkg-query -W -f='\${Status}' $pkg 2>&1 | grep -qE '^(\$install ok installed)+$'; then
+            if dpkg-query -W -f='\${Status}' "$pkg" 2>&1 | grep -qE '^(\$install ok installed)+$'; then
                 return 0
             else
                 return 1
             fi
         ;;
         rpm* )
-            if rpm --quiet -q $pkg; then
+            if rpm --quiet -q "$pkg"; then
                 return 0
             else
                 return 1
@@ -419,7 +418,7 @@ _set_cron()
 
     local cron_text=''
 
-    read -d '' cron_text <<EOF
+    read -r -d '' cron_text <<EOF
 # FastVPS disk monitoring tool
 # https://github.com/FastVPSEestiOu/storage-system-monitoring
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -451,19 +450,19 @@ _set_smartd()
     # Select smartd.conf for our RAID type
     case $raid_type in
         soft )
-            lines+='DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)'
+            lines+=('DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)')
         ;;
         adaptec )
             # Get drives to check
             local sgx=''
-            for sgx in $(ls --color=never -1 /dev/sg*); do
-                if smartctl -q silent -i $sgx; then
+            for sgx in /dev/sg?; do
+                if smartctl -q silent -i "$sgx"; then
                     drives+=("$sgx")
                 fi
             done
 
             # Form smartd rules
-            for drive in ${drives[@]}; do
+            for drive in "${drives[@]}"; do
                 lines+=("$drive -n standby -s (S/../.././02|L/../../7/03)")
             done
         ;;
@@ -472,7 +471,7 @@ _set_smartd()
             drives=( $(megacli -pdlist -a0| awk '/Device Id/ {print $NF}') )
 
             # Form smartd rules
-            for drive in ${drives[@]}; do
+            for drive in "${drives[@]}"; do
                 lines+=("/dev/sda -d megaraid,${drive} -n standby -s (S/../.././02|L/../../7/03)")
             done
         ;;
@@ -482,7 +481,7 @@ _set_smartd()
         ;;
     esac
 
-    IFS=$'\n' read -d '' smartd_conf <<EOF
+    IFS=$'\n' read -r -d '' smartd_conf <<EOF
 $smartd_header
 ${lines[*]}
 EOF
