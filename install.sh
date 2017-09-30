@@ -72,12 +72,19 @@ PKG_INSTALL["rpm_new"]='yum install -q -y'
 # Some fancy echoing
 _echo_OK()
 {
-    echo -e "${TXT_GRN}OK${TXT_RST}"
+    echo -e " -> ${TXT_GRN}OK${TXT_RST}"
 }
 
 _echo_FAIL()
 {
-    echo -e "${TXT_RED}FAIL${TXT_RST}"
+    echo -e " -> ${TXT_RED}FAIL${TXT_RST}"
+}
+
+_echo_tabbed()
+{
+    local message=$1
+    
+    echo -e " -> $message"
 }
 
 _echo_result()
@@ -160,6 +167,7 @@ _select_os_type()
         ;;
         * )
             echo "We can do nothing on $os. Exiting."
+            _echo_FAIL
             exit 1
         ;;
     esac
@@ -184,12 +192,13 @@ _install_deps()
     done
 
     if [[ ${#pkgs_to_install[@]} -eq 0 ]]; then
+        _echo_tabbed "We have everything we need."
         return 0
     else
-        echo -ne "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ... "
+        _echo_tabbed "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ..."
 
         # Catch error in variable
-        if IFS=$'\n' result=( $(eval "${PKG_INSTALL[$os_type]} ${pkgs_to_install[*]}" 2>&1) ); then
+        if IFS=$'\n' result=( $(eval "${PKG_INSTALL[$os_type]}" "${pkgs_to_install[@]}" 2>&1) ); then
             return 0
 
         # And output it, if we had nonzero exit code
@@ -225,7 +234,7 @@ _check_pkg()
             fi
         ;;
         * )
-            echo "We can do nothing on $os_type. Exiting."
+            _echo_tabbed "We can do nothing on $os_type. Exiting."
             exit 1
         ;;
     esac
@@ -292,7 +301,7 @@ _install_raid_tools()
             local adaptec_version=''
             adaptec_version=$(lspci -m | awk -F\"  '/Adaptec/ {print $(NF-1)}')
 
-            echo -e "\nFound RAID: ${TXT_YLW}${sys_block_check} ${adaptec_version}${TXT_RST}"
+            _echo_tabbed "Found RAID: ${TXT_YLW}${sys_block_check} ${adaptec_version}${TXT_RST}"
 
             # Select arcconf version dpending on controller version
             case $adaptec_version in
@@ -316,7 +325,7 @@ _install_raid_tools()
         # megacli for LSI (PERC is LSI controller on DELL)
         LSI|PERC )
             raid_type='lsi'
-            echo -e "\nFound RAID: ${TXT_YLW}${sys_block_check}${TXT_RST}"
+            _echo_tabbed "Found RAID: ${TXT_YLW}${sys_block_check}${TXT_RST}"
             util_path="${bin_path}/megacli"
             dl_path="${repo_path}/raid_monitoring_tools/megacli${arch}"
         ;;
@@ -324,12 +333,12 @@ _install_raid_tools()
         # Nothing if none RAID found
         '' )
             raid_type='soft'
-            echo -ne "No HW RAID. "
+            _echo_tabbed "No HW RAID."
         ;;
 
         # Fallback that should never be reached
         * )
-            echo -e "\nUnknown RAID type: ${TXT_YLW}${sys_block_check}${TXT_RST}. Exiting."
+            _echo_tabbed "Unknown RAID type: ${TXT_YLW}${sys_block_check}${TXT_RST}. Exiting."
             return 1
         ;;
     esac
@@ -346,7 +355,7 @@ _install_raid_tools()
         adaptec|lsi )
             if _dl_and_check "$dl_path" "$util_path"; then
                 chmod +x "$util_path"
-                echo -ne "We have installed ${TXT_YLW}${util_path}${TXT_RST} "
+                _echo_tabbed "Installed ${TXT_YLW}${util_path}${TXT_RST}"
                 RAID_TYPE="$raid_type"
                 return 0
             else
@@ -355,7 +364,7 @@ _install_raid_tools()
         ;;
         # Fallback that should never be reached
         * )
-            echo -e "\nUnknown RAID type: ${TXT_YLW}${raid_type}${TXT_RST}. Exiting."
+            _echo_tabbed "Unknown RAID type: ${TXT_YLW}${raid_type}${TXT_RST}. Exiting."
             return 1
         ;;
     esac
@@ -374,18 +383,19 @@ _install_smartctl()
     local util_path="${bin_path}/smartctl"
     local dl_path="${repo_path}/raid_monitoring_tools/smartctl${arch}"
 
-    smartctl_current=$(smartctl --version | awk '/r[0-9]{4}/ {print $4}')
+    smartctl_current=$(smartctl --version | grep -oE 'r[0-9]{4}')
 
     # If current version is lower then stable, download a new one
     if [[ ${smartctl_current#r} -lt ${smartctl_stable#r} ]]; then
         if _dl_and_check "$dl_path" "$util_path"; then
             chmod +x "$util_path"
-            echo -ne "We have installed ${TXT_YLW}${util_path}${TXT_RST} "
+            _echo_tabbed "Installed ${TXT_YLW}${util_path}${TXT_RST}"
             return 0
         else
             return 1
         fi
     else
+        _echo_tabbed "We have smartctl version ${TXT_YLW}${smartctl_current}${TXT_RST} here."
         return 0
     fi
 }
@@ -405,12 +415,13 @@ _install_script()
 
     if _dl_and_check "$script_remote" "$script_local"; then
         chmod +x -- "$script_local"
+        _echo_tabbed "Installed ${TXT_YLW}${script_local}${TXT_RST}"
     else
         return 1
     fi
 
     if _set_cron "$cron_file" "$script_local" "$cron_minutes" "$cron_header"; then
-        echo -ne "Installed ${TXT_YLW}${script_local}${TXT_RST} and ${TXT_YLW}${cron_file}${TXT_RST} "
+        _echo_tabbed "Installed ${TXT_YLW}${cron_file}${TXT_RST}"
         return 0
     else
         return 1
@@ -485,7 +496,7 @@ _set_smartd()
             done
         ;;
         * )
-            echo -e "\nUnknown RAID type: ${TXT_YLW}${raid_type}${TXT_RST}. Exiting."
+            _echo_tabbed "Unknown RAID type: ${TXT_YLW}${raid_type}${TXT_RST}. Exiting."
             return 1
         ;;
     esac
@@ -495,18 +506,14 @@ $smartd_header
 ${lines[*]}
 EOF
 
-    if [[ ! -e "$smartd_conf_backup" ]]; then
-        if mv "$smartd_conf_file" "$smartd_conf_backup"; then 
-            echo -ne "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST} "
-        else
-            return 1
-        fi
+    if mv "$smartd_conf_file" "$smartd_conf_backup"; then 
+        _echo_tabbed "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST}"
     else
-        echo -ne "We already have ${TXT_YLW}${smartd_conf_backup}${TXT_RST} here. Skipping backup creation. "
+        return 1
     fi
     
     if echo "$smartd_conf" > "$smartd_conf_file"; then
-        echo -ne "Filled ${TXT_YLW}${smartd_conf_file}${TXT_RST} "
+        _echo_tabbed "Filled ${TXT_YLW}${smartd_conf_file}${TXT_RST}"
         return 0
     else
         return 1
@@ -534,13 +541,14 @@ _restart_smartd()
             restart_cmd='/etc/init.d/smartmontools restart'
         ;;
         * )
-            echo -e "\nDon't know how to restart smartd on that OS: ${TXT_YLW}${os}${TXT_RST} "
+            _echo_tabbed "Don't know how to restart smartd on that OS: ${TXT_YLW}${os}${TXT_RST}"
             return 1
         ;;
     esac
 
     # Catch error in variable
     if IFS=$'\n' result=( $(eval "$restart_cmd" 2>&1) ); then
+        _echo_tabbed "Smartd started."
         return 0
 
     # And output it, if we had nonzero exit code
@@ -574,13 +582,14 @@ _enable_smartd_autostart()
             enable_cmd='update-rc.d smartmontools defaults'
         ;;
         * )
-            echo -e "\nDon't know how to enable smartd autostart on that OS: ${TXT_YLW}${os}${TXT_RST} "
+            _echo_tabbed "Don't know how to enable smartd autostart on that OS: ${TXT_YLW}${os}${TXT_RST}"
             return 1
         ;;
     esac
 
     # Catch error in variable
     if IFS=$'\n' result=( $(eval "$enable_cmd" 2>&1) ); then
+        _echo_tabbed "Smartd autostart enabled."
         return 0
 
     # And output it, if we had nonzero exit code
@@ -603,7 +612,7 @@ _run_script()
     if "${bin_path}/${script_name}" --"$mode"; then
         return 0
     else
-        echo -e "\nCannot run script in --$mode mode"
+        _echo_tabbed "Cannot run script in --$mode mode"
         return 1
     fi
 }
@@ -623,35 +632,35 @@ _select_os_type "$OS"
 # Limit random numbers by 59 minutes
 ((CRON_MINUTES = RANDOM % 59))
 
-echo -ne "Checking dependencies... "
+echo -e "Checking dependencies..."
 _install_deps "$OS_TYPE"
 _echo_result $?
 
-echo -ne "Checking for hardware RAID... "
+echo -e "Checking for hardware RAID..."
 _install_raid_tools "$BIN_PATH" "$REPO_PATH" "$ARCH"
 _echo_result $?
 
-echo -ne "Installing new smartctl if needed... "
+echo -e "Installing new smartctl if needed..."
 _install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH" "$SMARTCTL_STABLE"
 _echo_result $?
 
-echo -ne "Installing monitoring script... "
+echo -e "Installing monitoring script..."
 _install_script "$BIN_PATH" "$REPO_PATH" "$SCRIPT_NAME" "$CRON_FILE" "$CRON_MINUTES" "$CRON_HEADER"
 _echo_result $?
 
-echo -ne "Setting smartd... "
+echo -e "Setting smartd..."
 _set_smartd "$RAID_TYPE" "$SMARTD_HEADER" "$OS_TYPE" "$SMARTD_SUFFIX"
 _echo_result $?
 
-echo -ne "Starting smartd... "
+echo -e "Starting smartd..."
 _restart_smartd "$OS"
 _echo_result $?
 
-echo -ne "Enabling smartd autostart... "
+echo -e "Enabling smartd autostart..."
 _enable_smartd_autostart "$OS"
 _echo_result $?
 
-echo -ne "Sending data to FASTVPS monitoring server... "
+echo -e "Sending data to FASTVPS monitoring server..."
 _run_script "$BIN_PATH" "$SCRIPT_NAME" "cron"
 _echo_result $?
 
