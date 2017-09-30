@@ -13,6 +13,9 @@ TXT_RED='\e[0;31m'
 TXT_YLW='\e[0;33m'
 TXT_RST='\e[0m'
 
+# Set variable for pid
+PID=$$
+
 # Path for binaries
 BIN_PATH='/usr/local/bin'
 
@@ -25,13 +28,18 @@ SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
 # Path of our cron task
 CRON_FILE='/etc/cron.d/storage-system-monitoring-fastvps'
 
-# Static header for our smartd.conf
-SMARTD_HEADER='# smartd.conf by FastVPS
-# backup version of distrib file saved to /etc/smartd.conf.dist
-# Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00'
+# Static header for our cron task 
+CRON_HEADER='# FastVPS disk monitoring tool
+# https://github.com/FastVPSEestiOu/storage-system-monitoring
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
 
 # Suffix we add to moved smartd.conf
-SMARTD_SUFFIX='fastvps_backup'
+SMARTD_SUFFIX="fastvps_backup.${PID}"
+
+# Static header for our smartd.conf
+SMARTD_HEADER="# smartd.conf by FastVPS
+# backup version of distrib file saved to /etc/smartd.conf.$SMARTD_SUFFIX
+# Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00"
 
 # Stable smartctl version (SVN revision)
 SMARTCTL_STABLE='r4318'
@@ -112,7 +120,7 @@ _detect_os()
             fi
         fi
     fi
-    echo "${os}"
+    OS=$os
 }
 
 # Detect architecture
@@ -128,7 +136,7 @@ _detect_arch()
         arch=32
     fi
 
-    echo $arch
+    ARCH=$arch
 }
 
 # Select OS type based on OS
@@ -156,7 +164,7 @@ _select_os_type()
         ;;
     esac
 
-    echo $os_type
+    OS_TYPE=$os_type
 }
 
 # Check and install needed software
@@ -390,6 +398,7 @@ _install_script()
     local script_name=$3
     local cron_file=$4
     local cron_minutes=$5
+    local cron_header=$6
 
     local script_local="${bin_path}/${script_name}"
     local script_remote="${repo_path}/${script_name}"
@@ -400,7 +409,7 @@ _install_script()
         return 1
     fi
 
-    if _set_cron "$cron_file" "$script_local" "$cron_minutes"; then
+    if _set_cron "$cron_file" "$script_local" "$cron_minutes" "$cron_header"; then
         echo -ne "Installed ${TXT_YLW}${script_local}${TXT_RST} and ${TXT_YLW}${cron_file}${TXT_RST} "
         return 0
     else
@@ -415,14 +424,15 @@ _set_cron()
     local cron_file=$1
     local script_local=$2
     local cron_minutes=$3
+    local cron_header=$4
 
     local cron_text=''
 
+    local cron_line="$cron_minutes * * * * root $script_local --cron >/dev/null 2>&1"
+
     read -r -d '' cron_text <<EOF
-# FastVPS disk monitoring tool
-# https://github.com/FastVPSEestiOu/storage-system-monitoring
-PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-$cron_minutes * * * * root $script_local --cron >/dev/null 2>&1
+$cron_header
+$cron_line
 EOF
 
     echo "$cron_text" > "$cron_file"
@@ -437,10 +447,9 @@ _set_smartd()
     local smartd_header=$2
     local os_type=$3
     local smartd_suffix=$4
-    local pid=$$
 
     local smartd_conf_file=${SMARTD_CONF_FILE[$os_type]}
-    local smartd_conf_backup=${smartd_conf_file}.${smartd_suffix}.${pid}
+    local smartd_conf_backup=${smartd_conf_file}.${smartd_suffix}
 
     local smartd_conf=''
     local drive=''
@@ -602,11 +611,13 @@ _run_script()
 
 # Actual installation
 
-OS=$(_detect_os)
-ARCH=$(_detect_arch)
+# Detect OS and arch
+_detect_os
+_detect_arch
 echo -e "OS: ${TXT_YLW}${OS} x${ARCH}${TXT_RST}"
 
-OS_TYPE=$(_select_os_type "$OS")
+# Set OS type
+_select_os_type "$OS"
 
 # We should randomize run time to prevent ddos attacks to our gates
 # Limit random numbers by 59 minutes
@@ -625,7 +636,7 @@ _install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH" "$SMARTCTL_STABLE"
 _echo_result $?
 
 echo -ne "Installing monitoring script... "
-_install_script "$BIN_PATH" "$REPO_PATH" "$SCRIPT_NAME" "$CRON_FILE" "$CRON_MINUTES"
+_install_script "$BIN_PATH" "$REPO_PATH" "$SCRIPT_NAME" "$CRON_FILE" "$CRON_MINUTES" "$CRON_HEADER"
 _echo_result $?
 
 echo -ne "Setting smartd... "
