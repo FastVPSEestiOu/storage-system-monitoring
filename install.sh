@@ -47,6 +47,7 @@ SMARTCTL_STABLE='r4318'
 # Smartd config path
 declare -A SMARTD_CONF_FILE
 SMARTD_CONF_FILE["deb"]='/etc/smartd.conf'
+SMARTD_CONF_FILE["deb_old"]='/etc/smartd.conf'
 SMARTD_CONF_FILE["rpm_old"]='/etc/smartd.conf'
 SMARTD_CONF_FILE["rpm_new"]='/etc/smartmontools/smartd.conf'
 
@@ -219,7 +220,7 @@ _check_pkg()
     local pkg=$2
 
     case $os_type in
-        deb )
+        deb* )
             if dpkg-query -W -f='\${Status}' "$pkg" 2>&1 | grep -qE '^(\$install ok installed)+$'; then
                 return 0
             else
@@ -248,21 +249,21 @@ _dl_and_check()
     local local_path=$2
     local os=$OS
     local result=()
-    local wget_param=''
+    local wget_param=()
 
     # Adding --no-check-certificate on old OS
     case $os in
         Debian6 )
-            wget_param='--no-check-certificate --quiet'
+            wget_param=(--no-check-certificate --quiet)
         ;;
         * )
-            wget_param='--quiet'
+            wget_param=(--quiet)
         ;;
     esac
 
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget $wget_param "$remote_path" --output-document="$local_path") ); then
+    if IFS=$'\n' result=( $(wget ${wget_param[@]} "$remote_path" --output-document="$local_path") ); then
         return 0
 
     # And output it, if we had nonzero exit code
