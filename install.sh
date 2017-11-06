@@ -254,10 +254,10 @@ _dl_and_check()
     # Adding --no-check-certificate on old OS
     case $os in
         Debian6 )
-            wget_param=(--no-check-certificate --quiet)
+            wget_param=(--no-check-certificate --verbose)
         ;;
         * )
-            wget_param=(--quiet)
+            wget_param=(--verbose)
         ;;
     esac
 
