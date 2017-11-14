@@ -411,7 +411,7 @@ sub diag_disks {
     if ( $adaptec_needed ) {
         my $adaptec_ld_all_res = `$arcconf getconfig 1 ld 2>&1`;
         @adaptec_ld_all = split /\n\n/, $adaptec_ld_all_res;
-        $adapctec_device_quantity = @{[$adaptec_ld_all_res =~ /Logical device number/g]};
+        $adapctec_device_quantity = @{[$adaptec_ld_all_res =~ /Logical device number/gi]};
     }
 
     foreach my $storage (sort { $a->{'device_name'} cmp $b->{'device_name'} } @disks) {
