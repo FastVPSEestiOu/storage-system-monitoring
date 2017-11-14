@@ -263,7 +263,7 @@ _dl_and_check()
 
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget ${wget_param[@]} "$remote_path" --output-document="$local_path") ); then
+    if IFS=$'\n' result=( $(wget ${wget_param[@]} "$remote_path" --output-document="$local_path" 2>&1) ); then
         return 0
 
     # And output it, if we had nonzero exit code
@@ -294,8 +294,15 @@ _install_raid_tools()
     # Select utility to install
     case $sys_block_check in
         # arcconf for Adaptec
+        ASR8405 )
+            raid_type='adaptec'
+            util_path="${bin_path}/arcconf"
 
-        Adaptec|ASR8405 )
+            _echo_tabbed "Found RAID: ${TXT_YLW}${sys_block_check}${TXT_RST}"
+
+            dl_path="${repo_path}/raid_monitoring_tools/arcconf_new"
+        ;;
+        Adaptec )
             raid_type='adaptec'
             util_path="${bin_path}/arcconf"
 
