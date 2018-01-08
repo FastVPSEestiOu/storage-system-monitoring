@@ -1,6 +1,8 @@
 storage-system-monitoring
 ==========================
 
+*Read this in: [Russian](README.md), [English](README.en.md).*
+
 Добро пожаловать, уважаемый клиент компании FastVPS Eesti OU! :) Вы пришли сюда потому что мы очень заботимся о Вас и сохранности Ваших Данных!
 
 В данном репозитории размещен открытый код используемой нами системы диагностики дисковой подсистемы Ваших серверов. 
@@ -39,11 +41,9 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Скрипт не отправляет никакой информации кроме того, что перечислено выше
 
 Какие ОС поддерживаются:
-- Debian Linux 5 (только вручную), 6, 7 и старше
-- Centos Linux 5 (только вручную), 6 и старше
-- Parallels Cloud Server 6
-- Ubuntu 12.04 и старше
-- Citrix XenServer 6 (только вручную)
+- Debian Linux 7 и старше
+- Centos Linux 6 и старше
+- Ubuntu 14.04 и старше
 
 На каком языке написано ПО для мониторинга?
 - Perl (модуль мониторинга)
@@ -58,55 +58,19 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - Любой клиент компании FastVPS Eesti OU
 
 Какое ПО мы устанавливаем на сервер и для чего?
-- parted - универсальный инструмент для получения информации о дисковых устройствах (используется только в инсталляторе)
 - smartmontools - пакет утилит для получения S.M.A.R.T. информации из устройства
 - Perl модули для работы с HTTP и HTTPS, для отправки данных на сервер для анализа
 - arcconf/megacli - утилиты от производителей Adaptec и LSI
 
 Откуда берется проприетарное ПО для LSI/Adaptec?
-- http://download.adaptec.com/raid/storage_manager/arcconf_v1_5_20942.zip 1_5_20942
-- http://www.lsi.com/downloads/Public/RAID%20Controllers/RAID%20Controllers%20Common%20Files/8.07.14_MegaCLI.zip 8.07.14 (.rpm)
-- http://www.lsi.com/downloads/Public/Nytro/downloads/Nytro%20XD/MegaCli_Linux.zip 8.07.08-1 (.deb) 
+- https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v2_01_22270_zip.php
+- https://docs.broadcom.com/docs-and-downloads/sep/oracle/files/Linux_MegaCLI-8-07-07.zip
 
 Могу ли я использовать программу только локально, вручную проверяя состояние массивов?
 - Да, разумеется, но при этом Вы лишаетсь возможностей нашей системы по анализу S.M.A.R.T. и прочих метрик, проверяется только состояние массива, также Вы не получаете никаких уведомлений в случае отказа дисков
 
 Возможна ли поддержка XXX YYY?
 - Разумеется, патчи приветствуются! 
-
-Как установить скрипт на Gentoo?
-- Для начала требуется установить все его зависимости, а после этого выполнить ручную установку:
-```bash
-emerge -atv sys-apps/smartmontools
-emerge -atv dev-perl/JSON
-emerge -atv dev-perl/libwww-perl
-```
-
-Как установить скрипт на Citrix XenServer?
-- Нужно добавить Epel репозиторий соответствующей версии (требуется для perl-JSON)
-- Устанавливаем зависимости:
-```bash
-yum install --enablerepo=base libstdc++ parted smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON
-```
-
-Как осуществляется установка на CentOS 5?
-- До начала установки требуется подключить к системе репозиторий EPEL: https://fedoraproject.org/wiki/EPEL (требуется для perl-JSON)
-
-Как осуществляется установка на CentOS 7?
-- До начала установки требуется установить 
-```bash
-yum install --enablerepo=base perl-LWP-Protocol-https
-```
-- После окончания установки требуется запустить smartd
-```bash
-systemctl start smartd
-```
-
-Как осуществляется установка на Debian 5 Lenny?
-- До начала установки установите следующие пакеты (а вообще, пора обновляться!):
-```bash
-apt-get install -y libwww-perl libjson-any-perl libcrypt-ssleay-perl
-```
 
 Как выглядит выдача скрипта?
 ```bash
