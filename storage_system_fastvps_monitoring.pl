@@ -45,6 +45,7 @@ my @major_blacklist = (
     7,   # это loop устройства
     43,  # nbd http://en.wikipedia.org/wiki/Network_block_device
     182, # это openvz ploop диск
+    230, # zvol
     253, # device-mapper, но на Citrix XenServer это tapdev
     252, # device-mapper на Citrix XenServer
 );
