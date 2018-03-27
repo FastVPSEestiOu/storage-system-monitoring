@@ -263,6 +263,11 @@ sub find_disks_without_parted {
         if ( $model =~ m/^idrac\s+virtual\s+\w+$/ ) {
            	next;
         }
+        
+        # Skip qemu devices.
+        if ( $model =~ m/.+qemu.+/ ) {
+            next;
+        }
 
         my $device_size = get_device_size($block_device);
         my $device_name = get_device_path($block_device);
