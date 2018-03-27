@@ -43,6 +43,7 @@ my $help;
 my @major_blacklist = (
     1,   # это ram устройства
     7,   # это loop устройства
+    11,  # CD-ROM
     43,  # nbd http://en.wikipedia.org/wiki/Network_block_device
     182, # это openvz ploop диск
     230, # zvol
