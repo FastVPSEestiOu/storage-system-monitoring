@@ -290,7 +290,7 @@ _install_raid_tools()
 
     # Detect RAID
     local sys_block_check=''
-    sys_block_check=$(cat /sys/block/*/device/vendor /sys/block/*/device/model | grep -oEm1 'Adaptec|LSI|PERC|ASR8405')
+    sys_block_check=$(cat /sys/block/*/device/vendor /sys/block/*/device/model 2>/dev/null | grep -oEm1 'Adaptec|LSI|PERC|ASR8405')
 
     # Select utility to install
     case $sys_block_check in
