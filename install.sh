@@ -65,10 +65,25 @@ PKG_DEPS["rpm_old"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-
 PKG_DEPS["rpm_new"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON perl-LWP-Protocol-https'
 
 declare -A PKG_INSTALL
-PKG_INSTALL["deb"]="apt-get update -qq && apt-get install -qq"
-PKG_INSTALL["deb_old"]="apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -qq"
+PKG_INSTALL["deb"]='apt-get update -qq && apt-get install -qq'
+PKG_INSTALL["deb_old"]='apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -qq'
 PKG_INSTALL["rpm_old"]='yum install -q -y'
 PKG_INSTALL["rpm_new"]='yum install -q -y'
+
+# List of packages which we do NOT want to update, in form of regex
+declare -A PKG_UNSAFE
+PKG_UNSAFE["deb"]='Inst libc6|Inst apache2|Inst php'
+PKG_UNSAFE["deb_old"]='Inst libc6|Inst apache2|Inst php'
+PKG_UNSAFE["rpm_old"]='^ glibc|^ httpd|^ php'
+PKG_UNSAFE["rpm_new"]='^ glibc|^ httpd|^ php'
+
+# And command for it
+declare -A PKG_INSTALL_TEST
+PKG_INSTALL_TEST["deb"]='apt-get update && apt-get install -s'
+PKG_INSTALL_TEST["deb_old"]='apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -s'
+PKG_INSTALL_TEST["rpm_old"]='yum install --assumeno'
+PKG_INSTALL_TEST["rpm_new"]='yum install --assumeno'
+
 
 # Some fancy echoing
 _echo_OK()
@@ -181,6 +196,7 @@ _install_deps()
 {
     local os_type=$1
     local pkgs_to_install=()
+    local unsafe_pkgs=()
 
     # Check if we have packages needed
     local pkg=''
@@ -197,6 +213,23 @@ _install_deps()
         return 0
     else
         _echo_tabbed "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ..."
+
+        # Check if we are going to break something
+	    IFS=$'\n' result=( $(eval "${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}") )
+        for (( i=0; i<${#result[@]}; i++ )); do
+            if [[ "${result[i]}" =~ ${PKG_UNSAFE[$os_type]} ]]; then
+		        unsafe_pkgs+=("${result[i]}")
+            fi
+        done
+
+        if [[ ${#unsafe_pkgs[@]} -gt 0 ]]; then
+            echo "We are going to update something we do not want to:"
+            for (( i=0; i<${#unsafe_pkgs[@]}; i++ )); do
+                echo "${unsafe_pkgs[i]}";
+            done
+            echo -e "\nYou can check it yourself with command:\n${PKG_INSTALL_TEST[$os_type]} ${pkgs_to_install[@]}"
+            return 1
+        fi
 
         # Catch error in variable
         if IFS=$'\n' result=( $(eval "${PKG_INSTALL[$os_type]}" "${pkgs_to_install[@]}" 2>&1) ); then
@@ -240,7 +273,6 @@ _check_pkg()
         ;;
     esac
 }
-
 
 # Function to download with check
 _dl_and_check()
