@@ -42,7 +42,8 @@ SMARTD_HEADER="# smartd.conf by FastVPS
 # Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00"
 
 # Stable smartctl version (SVN revision)
-SMARTCTL_STABLE='r4318'
+SMARTCTL_STABLE_VERSION='66'
+SMARTCTL_STABLE_REVISION='4318'
 
 # Smartd config path
 declare -A SMARTD_CONF_FILE
@@ -321,7 +322,7 @@ _install_raid_tools()
 
     # Detect RAID
     local sys_block_check=''
-    sys_block_check=$(cat /sys/block/*/device/vendor /sys/block/*/device/model | grep -oEm1 'Adaptec|LSI|PERC|ASR8405')
+    sys_block_check=$(cat /sys/block/*/device/vendor /sys/block/*/device/model 2>/dev/null | grep -oEm1 'Adaptec|LSI|PERC|ASR8405')
 
     # Select utility to install
     case $sys_block_check in
@@ -416,17 +417,21 @@ _install_smartctl()
     local bin_path=$1
     local repo_path=$2
     local arch=$3
-    local smartctl_stable=$4
+    local smartctl_stable_version=$4
+    local smartctl_stable_revision=$5
 
-    local smartctl_current=''
+    local smartctl_current_version=''
+    local smartctl_current_revision=''
 
     local util_path="${bin_path}/smartctl"
     local dl_path="${repo_path}/raid_monitoring_tools/smartctl${arch}"
 
-    smartctl_current=$(smartctl --version | grep -oE 'r[0-9]{4}')
+    smartctl_current_version=$(smartctl --version | awk -F '[ .]' '/^smartmontools release/ {print $3$4}')
+    smartctl_current_revision=$(smartctl --version | awk '/^smartmontools SVN rev/ {print $4}')
+
 
     # If current version is lower then stable, download a new one
-    if [[ ${smartctl_current#r} -lt ${smartctl_stable#r} ]]; then
+    if [[ "$smartctl_current_version" -lt "$smartctl_stable_version" ]] || [[ "$smartctl_current_revision" -lt "$smartctl_stable_revision" ]]; then
         if _dl_and_check "$dl_path" "$util_path"; then
             chmod +x "$util_path"
             _echo_tabbed "Installed ${TXT_YLW}${util_path}${TXT_RST}"
@@ -435,7 +440,7 @@ _install_smartctl()
             return 1
         fi
     else
-        _echo_tabbed "We have smartctl version ${TXT_YLW}${smartctl_current}${TXT_RST} here."
+        _echo_tabbed "We have smartctl version ${TXT_YLW}${smartctl_current_version}${TXT_RST} (rev. ${TXT_YLW}${smartctl_current_revision}${TXT_RST}) here."
         return 0
     fi
 }
@@ -681,7 +686,7 @@ _install_raid_tools "$BIN_PATH" "$REPO_PATH" "$ARCH"
 _echo_result $?
 
 echo -e "Installing new smartctl if needed..."
-_install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH" "$SMARTCTL_STABLE"
+_install_smartctl "$BIN_PATH" "$REPO_PATH" "$ARCH" "$SMARTCTL_STABLE_VERSION" "$SMARTCTL_STABLE_REVISION"
 _echo_result $?
 
 echo -e "Installing monitoring script..."
