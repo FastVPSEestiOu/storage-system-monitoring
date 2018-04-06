@@ -42,6 +42,7 @@ my $help;
 # List of device's major_id for ignore.
 my @major_blacklist = (
     1,   # это ram устройства
+    2,   # Floppy disks
     7,   # это loop устройства
     11,  # CD-ROM
     43,  # nbd http://en.wikipedia.org/wiki/Network_block_device
