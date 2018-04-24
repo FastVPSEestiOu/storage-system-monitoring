@@ -266,6 +266,11 @@ sub find_disks_without_parted {
            	next;
         }
         
+        # Skip ipmi devices.
+        if ( $model =~ m/^ipmi\s+virtual\s+\w+$/ ) {
+           	next;
+        }
+        
         # Skip qemu devices.
         if ( $model =~ m/.+qemu.+/ ) {
             next;
