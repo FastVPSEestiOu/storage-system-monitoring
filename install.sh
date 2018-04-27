@@ -67,7 +67,7 @@ PKG_DEPS["rpm_new"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-
 
 declare -A PKG_INSTALL
 PKG_INSTALL["deb"]='apt-get update -qq && apt-get install -qq'
-PKG_INSTALL["deb_old"]='apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -qq'
+PKG_INSTALL["deb_old"]='apt-get update -o Acquire::Check-Valid-Until=false -qq && apt-get install -qq --allow-unauthenticated'
 PKG_INSTALL["rpm_old"]='yum install -q -y'
 PKG_INSTALL["rpm_new"]='yum install -q -y'
 
