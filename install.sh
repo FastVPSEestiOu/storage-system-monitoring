@@ -574,7 +574,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|CentOS7|Ubuntu16|Ubuntu17 )
+        Debian[8-9]|CentOS7|Ubuntu1[678] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -615,7 +615,7 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|CentOS7|Ubuntu16|Ubuntu17 )
+        Debian[8-9]|CentOS7|Ubuntu1[678] )
             enable_cmd='systemctl enable smartd.service'
         ;;
         # chkconfig on CentOS 6
