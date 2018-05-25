@@ -42,7 +42,7 @@ SMARTD_HEADER="# smartd.conf by FastVPS
 # Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00"
 
 # Stable smartctl version (SVN revision)
-SMARTCTL_STABLE_VERSION='66'
+SMARTCTL_STABLE_VERSION='6.6'
 SMARTCTL_STABLE_REVISION='4318'
 
 # Smartd config path
@@ -422,16 +422,22 @@ _install_smartctl()
 
     local smartctl_current_version=''
     local smartctl_current_revision=''
+    local version_comp_result=''
 
     local util_path="${bin_path}/smartctl"
     local dl_path="${repo_path}/raid_monitoring_tools/smartctl${arch}"
 
-    smartctl_current_version=$(smartctl --version | awk -F '[ .]' '/^smartmontools release/ {print $3$4}')
+    smartctl_current_version=$(smartctl --version | awk '/^smartmontools release/ {print $3}')
     smartctl_current_revision=$(smartctl --version | awk '/^smartmontools SVN rev/ {print $4}')
 
 
     # If current version is lower then stable, download a new one
-    if [[ "$smartctl_current_version" -lt "$smartctl_stable_version" ]] || [[ "$smartctl_current_revision" -lt "$smartctl_stable_revision" ]]; then
+
+    # We'll get exit code 2 if current version is lower than stable version
+    _version_copmare $smartctl_current_version $smartctl_stable_version
+    version_comp_result=$?
+    
+    if [[ "$version_comp_result" -eq "2" ]] || [[ "$smartctl_current_revision" -lt "$smartctl_stable_revision" ]]; then
         if _dl_and_check "$dl_path" "$util_path"; then
             chmod +x "$util_path"
             _echo_tabbed "Installed ${TXT_YLW}${util_path}${TXT_RST}"
@@ -443,6 +449,48 @@ _install_smartctl()
         _echo_tabbed "We have smartctl version ${TXT_YLW}${smartctl_current_version}${TXT_RST} (rev. ${TXT_YLW}${smartctl_current_revision}${TXT_RST}) here."
         return 0
     fi
+}
+
+# Function to compare dotted versions
+_version_copmare()
+{
+    # Compares two versions
+    # Returns:
+    #   0 -> first = second
+    #   1 -> first > second
+    #   2 -> first < second
+
+    local first_string=$1
+    local second_string=$2
+
+    local first_array=()
+    local second_array=()
+
+    # Split versions into arrays
+    IFS='.' read -ra first_array <<< "$first_string"
+    IFS='.' read -ra second_array <<< "$second_string"
+
+    # Fill empty fields in first array with zeros
+    for ((i=${#first_array[@]}; i<${#second_array[@]}; i++)); do
+        first_array[$i]=0
+    done
+
+    for ((i=0; i<${#first_array[@]}; i++)); do
+        # Fill empty fields in second array with zeros
+        if [[ -z ${second_array[$i]} ]]; then
+            second_array[$i]=0
+        fi
+
+        # "10#" forces decimal numbers interpretation
+        if ((10#${first_array[$i]} > 10#${second_array[$i]})); then
+            return 1
+        fi
+        if ((10#${first_array[$i]} < 10#${second_array[$i]})); then
+            return 2
+        fi
+    done
+
+    return 0
 }
 
 # Install monitoring script
