@@ -7,6 +7,9 @@
 
 set -u
 
+# Disable interactive mode when configuring packages
+export DEBIAN_FRONTEND='noninteractive'
+
 # Setting text colors
 TXT_GRN='\e[0;32m'
 TXT_RED='\e[0;31m'
