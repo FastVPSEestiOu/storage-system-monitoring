@@ -46,7 +46,7 @@ SMARTD_HEADER="# smartd.conf by FastVPS
 
 # Stable smartctl version (SVN revision)
 SMARTCTL_STABLE_VERSION='6.6'
-SMARTCTL_STABLE_REVISION='4318'
+SMARTCTL_STABLE_REVISION='4594'
 
 # Smartd config path
 declare -A SMARTD_CONF_FILE
