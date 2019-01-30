@@ -10,6 +10,8 @@ License: GPLv2
 use strict;
 use warnings;
 
+use POSIX qw(locale_h);
+
 use LWP::UserAgent;
 use JSON;
 use Data::Dumper;
@@ -38,6 +40,9 @@ my $sysfs_block_path = '/sys/block';
 my $only_detect_drives;
 my $cron_run;
 my $help;
+
+# Set locale
+setlocale(LC_ALL, "en_US");
 
 # List of device's major_id for ignore.
 my @major_blacklist = (
