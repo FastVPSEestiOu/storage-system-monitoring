@@ -561,6 +561,9 @@ sub get_smart_disk{
         } else {
             $smart_result = get_ssd_smart_info($disk_number, $raid_control, $adapctec_device_quantity);
         }
+		unless ($smart_result) {
+			next;
+		}
         $device_name = $disk_number;
         $model = $raid_control;
         $diag = $smart_result;
@@ -590,9 +593,15 @@ sub get_ssd_smart_info{
     }else{
         my $adapctec_device_quantity = shift;
         my $sg_number=$disk_number+$adapctec_device_quantity;
-        $smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
-    }
-    return "$smart_result\n";
+
+		my $smart_info = `$smartctl -i /dev/sg$sg_number`;
+        if ($smart_info =~ /Product:\s+LogicalDrv/) {
+			return 0;
+		} else {
+        	$smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
+    		return "$smart_result\n";
+		}
+	}
 }
 
 #Получаем и НЕ парсим инфу с SAS диска
@@ -622,8 +631,7 @@ sub send_disks_results {
     ];
     # get result
     my $ua = LWP::UserAgent->new();
-    #$ua->agent("FastVPS disk monitoring version $VERSION");
-
+    #$ua->agent("FastVPS disk monitoring version $VER
     # Allow redirects for POST requests
     push @{ $ua->requests_redirectable }, 'POST';
     my $res = $ua->post($API_URL, Content => encode_json($request_data) );
