@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Configuration.
-my $VERSION = "1.1";
+my $VERSION = "1.2";
 my $PATH = $ENV{'PATH'};
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
@@ -634,10 +634,10 @@ sub get_sas_smart_info{
 sub send_disks_results {
     my (@disks) = @_;
     
-    my $request_data = [
+    my $request_data = {
         'storage_devices' => \@disks,
         'version'         => $VERSION,
-    ];
+    };
     # get result
     my $ua = LWP::UserAgent->new();
     #$ua->agent("FastVPS disk monitoring version $VER
@@ -655,11 +655,10 @@ sub send_disks_results {
 
 sub print_disks_results {
     my (@disks) = @_;
-    
-    my $request_data = [
+
+    my $request_data = {
         'storage_devices' => \@disks,
         'version'         => $VERSION,
-    ];
-
+    };
     print encode_json($request_data), "\n";
 }
