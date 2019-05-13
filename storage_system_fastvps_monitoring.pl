@@ -39,6 +39,7 @@ my $sysfs_block_path = '/sys/block';
 # Options
 my $only_detect_drives;
 my $cron_run;
+my $json;
 my $help;
 
 # Set locale
@@ -59,11 +60,13 @@ my @major_blacklist = (
 
 my $options = "Use options: [ --detect ] [ --cron ] [ --help ]
 \t-d|--detect - Print list of drives. The result will not be sent to API.
+\t-j|--json - Print smart data for found drives in json. The result will not be sent to API.
 \t-c|--cron - Print smart data for found drives. The result will be sent to API. Must be set in crontab task.
 \t-h|--help - show this message.\n";
 
 GetOptions (
     "d|detect"  => \$only_detect_drives,
+    "j|json"   => \$json,
     "c|cron"  => \$cron_run,
     "h|help"  => \$help,
 ) or die "Error in command line arguments!\n$options\n";
@@ -109,6 +112,12 @@ if ($cron_run) {
         print "Failed to send storage monitoring data to FastVPS";
         exit(1);
     }
+    exit 0;
+}
+
+if ($json) {
+    print_disks_results(@disks);
+    exit 0;
 }
 
 if (!$only_detect_drives && !$cron_run) {
@@ -642,4 +651,15 @@ sub send_disks_results {
         warn "Can't sent data to collector: " . $res->status_line  .  "\n";
         exit 1;
     }
+}
+
+sub print_disks_results {
+    my (@disks) = @_;
+    
+    my $request_data = [
+        'storage_devices' => \@disks,
+        'version'         => $VERSION,
+    ];
+
+    print encode_json($request_data), "\n";
 }
