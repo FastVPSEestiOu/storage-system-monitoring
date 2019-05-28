@@ -173,10 +173,10 @@ _select_os_type()
     local os_type=''
 
     case $os in
-        Debian6 )
+        Debian[6-7] )
             os_type='deb_old'
         ;;
-        Debian[7-9]|Ubuntu* )
+        Debian[8-9]|Ubuntu* )
             os_type='deb'
         ;;
         CentOS6 )
