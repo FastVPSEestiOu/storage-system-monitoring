@@ -577,6 +577,11 @@ _set_smartd()
                 fi
             done
 
+            if [[ ${#drives[@]} -eq 0 ]]; then
+                _echo_tabbed "Failed to get ${TXT_YLW}/dev/sg?${TXT_RST} drives for Adaptec controller. Try to call ${TXT_YLW}modprobe sg${TXT_RST} and retry."
+                return 1
+            fi
+
             # Form smartd rules
             for drive in "${drives[@]}"; do
                 lines+=("$drive -n standby -s (S/../.././02|L/../../7/03)")
@@ -585,6 +590,11 @@ _set_smartd()
         lsi )
             # Get drives to check
             drives=( $(megacli -pdlist -a0| awk '/Device Id/ {print $NF}') )
+
+            if [[ ${#drives[@]} -eq 0 ]]; then
+                _echo_tabbed "Failed to get drives for LSI controller. Try to call ${TXT_YLW}megacli -pdlist -a0${TXT_RST} and check the output."
+                return 1
+            fi
 
             # Form smartd rules
             for drive in "${drives[@]}"; do
