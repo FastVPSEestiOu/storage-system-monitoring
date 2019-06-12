@@ -219,7 +219,7 @@ _install_deps()
         _echo_tabbed "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ..."
 
         # Check if we are going to break something
-	    IFS=$'\n' result=( $(eval "${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}") )
+	    mapfile -t < <( eval "${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}" ) result
         for (( i=0; i<${#result[@]}; i++ )); do
             if [[ "${result[i]}" =~ ${PKG_UNSAFE[$os_type]} ]]; then
 		        unsafe_pkgs+=("${result[i]}")
@@ -231,7 +231,7 @@ _install_deps()
             for (( i=0; i<${#unsafe_pkgs[@]}; i++ )); do
                 echo "${unsafe_pkgs[i]}";
             done
-            echo -e "\nYou can check it yourself with command:\n${PKG_INSTALL_TEST[$os_type]} ${pkgs_to_install[@]}"
+            echo -e "\nYou can check it yourself with command:\n${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}"
             return 1
         fi
 
@@ -299,7 +299,7 @@ _dl_and_check()
 
 
     # Catch error in variable
-    if IFS=$'\n' result=( $(wget ${wget_param[@]} "$remote_path" --output-document="$local_path" 2>&1) ); then
+    if IFS=$'\n' result=( $(wget "${wget_param[@]}" "$remote_path" --output-document="$local_path" 2>&1) ); then
         return 0
 
     # And output it, if we had nonzero exit code
@@ -437,7 +437,7 @@ _install_smartctl()
     # If current version is lower then stable, download a new one
 
     # We'll get exit code 2 if current version is lower than stable version
-    _version_copmare $smartctl_current_version $smartctl_stable_version
+    _version_copmare "$smartctl_current_version" "$smartctl_stable_version"
     version_comp_result=$?
     
     if [[ "$version_comp_result" -eq "2" ]] || [[ "$smartctl_current_revision" -lt "$smartctl_stable_revision" ]]; then
@@ -589,7 +589,7 @@ _set_smartd()
         ;;
         lsi )
             # Get drives to check
-            drives=( $(megacli -pdlist -a0| awk '/Device Id/ {print $NF}') )
+            mapfile -t < <( megacli -pdlist -a0| awk '/Device Id/ {print $NF}' ) drives
 
             if [[ ${#drives[@]} -eq 0 ]]; then
                 _echo_tabbed "Failed to get drives for LSI controller. Try to call ${TXT_YLW}megacli -pdlist -a0${TXT_RST} and check the output."
