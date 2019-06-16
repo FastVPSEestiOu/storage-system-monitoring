@@ -569,6 +569,23 @@ _set_smartd()
             lines+=('DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)')
         ;;
         adaptec )
+            # Try to load sg module if it is not loaded for some reason
+            if [[ ! -c /dev/sg0 ]]; then
+                # Catch error in variable
+                if IFS=$'\n' result=( $(modprobe sg 2>&1) ); then
+                    _echo_tabbed "Loaded ${TXT_YLW}sg${TXT_RST} module."
+
+                # And output it, if we had nonzero exit code
+                else
+                    echo
+                    for (( i=0; i<${#result[@]}; i++ )); do
+                        echo "${result[i]}";
+                    done
+                    _echo_tabbed "Failed to load ${TXT_YLW}sg${TXT_RST} module. We need it to work with Adaptec controller."
+                    return 1
+                fi
+            fi
+
             # Get drives to check
             local sgx=''
             for sgx in /dev/sg?; do
@@ -578,7 +595,7 @@ _set_smartd()
             done
 
             if [[ ${#drives[@]} -eq 0 ]]; then
-                _echo_tabbed "Failed to get ${TXT_YLW}/dev/sg?${TXT_RST} drives for Adaptec controller. Try to call ${TXT_YLW}modprobe sg${TXT_RST} and retry."
+                _echo_tabbed "Failed to get ${TXT_YLW}/dev/sg?${TXT_RST} drives for Adaptec controller. We have tried ${TXT_YLW}modprobe sg${TXT_RST} but without success. Check it and proceed manually."
                 return 1
             fi
 
