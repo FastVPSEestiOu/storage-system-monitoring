@@ -661,6 +661,8 @@ _restart_smartd()
         ## On Debian 7 we should always have /etc/init.d/smartmontools while /etc/init.d/smartd can be removed when using backports
         ;;
         Debian[6-7]|Ubuntu12|Ubuntu14 )
+            # Hack for Debain 6-7
+            sed -i -e 's/^#start_smartd/start_smartd/' /etc/default/smartmontools
             restart_cmd='/etc/init.d/smartmontools restart'
         ;;
         * )
