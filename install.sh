@@ -176,7 +176,7 @@ _select_os_type()
         Debian[6-7] )
             os_type='deb_old'
         ;;
-        Debian[8-9]|Ubuntu* )
+        Debian[8-9]|Debian10|Ubuntu* )
             os_type='deb'
         ;;
         CentOS6 )
@@ -652,7 +652,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|CentOS7|Ubuntu1[678] )
+        Debian[8-9]|Debian10|CentOS7|Ubuntu1[678] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -695,7 +695,7 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|CentOS7|Ubuntu1[678] )
+        Debian[8-9]|Debian10|CentOS7|Ubuntu1[678] )
             enable_cmd='systemctl enable smartd.service'
         ;;
         # chkconfig on CentOS 6
