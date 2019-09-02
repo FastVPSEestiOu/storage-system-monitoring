@@ -290,6 +290,11 @@ sub find_disks_without_parted {
             next;
         }
 
+        # Skip JetFlash devices
+        if ( $model =~ m/^jetflash\s+transcend\s+\w+$/ ) {
+            next;
+        }
+
         my $device_size = get_device_size($block_device);
         my $device_name = get_device_path($block_device);
 
