@@ -297,6 +297,10 @@ _dl_and_check()
         ;;
     esac
 
+    # Clean target path before download
+    if [[ -x "$local_path" ]]; then
+        rm -f "$local_path";
+    fi
 
     # Catch error in variable
     if IFS=$'\n' result=( $(wget "${wget_param[@]}" "$remote_path" --output-document="$local_path" 2>&1) ); then
