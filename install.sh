@@ -66,7 +66,7 @@ declare -A PKG_DEPS
 PKG_DEPS["deb"]='wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl'
 PKG_DEPS["deb_old"]='wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl'
 PKG_DEPS["rpm_old"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON'
-PKG_DEPS["rpm_new"]='wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON perl-LWP-Protocol-https'
+PKG_DEPS["rpm_new"]='wget libstdc++ smartmontools perl-libwww-perl perl-JSON perl-LWP-Protocol-https'
 
 declare -A PKG_INSTALL
 PKG_INSTALL["deb"]='apt-get update -qq && apt-get install -qq'
@@ -182,7 +182,7 @@ _select_os_type()
         CentOS6 )
             os_type='rpm_old'
         ;;
-        CentOS7 )
+        CentOS[7-8] )
             os_type='rpm_new'
         ;;
         * )
@@ -656,7 +656,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS7|Ubuntu1[678] )
+        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -699,7 +699,7 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS7|Ubuntu1[678] )
+        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678] )
             enable_cmd='systemctl enable smartd.service'
         ;;
         # chkconfig on CentOS 6
