@@ -656,8 +656,12 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678]|Ubuntu20 )
+        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678] )
             restart_cmd='systemctl restart smartd.service'
+        ;;
+        # On Ubuntu 20 service name is smartmontools.service. smartd.service is link to smartmontools.service
+        Ubuntu20 )
+            restart_cmd='systemctl restart smartmontools.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
         CentOS6 )
@@ -699,8 +703,12 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678]|Ubuntu20 )
+        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[678] )
             enable_cmd='systemctl enable smartd.service'
+        ;;
+        # On Ubuntu 20 service name is smartmontools.service. smartd.service is link to smartmontools.service
+        Ubuntu20 )
+            enable_cmd='systemctl enable smartmontools.service'
         ;;
         # chkconfig on CentOS 6
         CentOS6 )
