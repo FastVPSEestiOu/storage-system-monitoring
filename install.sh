@@ -340,7 +340,7 @@ _install_raid_tools()
 
             _echo_tabbed "Found RAID: ${TXT_YLW}${sys_block_check}${TXT_RST}"
 
-            dl_path="${repo_path}/raid_monitoring_tools/arcconf_new"
+            dl_path="${repo_path}/raid_monitoring_tools/arcconf_v2"
         ;;
         Adaptec )
             raid_type='adaptec'
@@ -353,13 +353,17 @@ _install_raid_tools()
 
             # Select arcconf version dpending on controller version
             case $adaptec_version in
-                # Old Adaptec controller (2xxx-5xxx) - need to use old arcconf
+                # Old Adaptec controller (2xxx-5xxx) - Adaptec Storage Manager v7
                 *[2-5][0-9][0-9][0-9] )
                     dl_path="${repo_path}/raid_monitoring_tools/arcconf${arch}_old"
                 ;;
-                # Newer Adaptec controller (6xxx-8xxx) - new version of arcconf
+                # Newer Adaptec controller (6xxx-8xxx) - arcconf v2
                 *[6-8][0-9][0-9][0-9] )
-                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_new"
+                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_v2"
+                ;;
+                # Even newer Adaptec controller (SmartRAID 31xx) - arcconf v3
+                *SmartRAID*31[0-9][0-9]* )
+                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_v3"
                 ;;
                 # Otherwise exit
                 * )
