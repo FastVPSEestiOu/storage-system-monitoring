@@ -551,12 +551,16 @@ sub get_smart_disk{
             $pd_type{$_} = $pd;
         }
     }elsif( $raid_control =~ /adaptec/){
-        my $res=`$arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD" | sed 's/  //g'`;
+        my $res=`$arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD|SES2" | sed 's/  //g'`;
         $res =~ s/\n Transfer/ Transfer/g;
         $res =~ s/\n SSD/ SSD/g;
+        $res =~ s/\n Type/ Type/g;
 
         for(split(/\n/,$res)){
-
+            # Skip SES2 devices
+            if (/ SES2/){
+                next;
+            }
             if (/ Yes /){
                 s/ SATA / SSD /;
             }
