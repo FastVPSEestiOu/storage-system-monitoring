@@ -340,7 +340,7 @@ _install_raid_tools()
 
             _echo_tabbed "Found RAID: ${TXT_YLW}${sys_block_check}${TXT_RST}"
 
-            dl_path="${repo_path}/raid_monitoring_tools/arcconf_new"
+            dl_path="${repo_path}/raid_monitoring_tools/arcconf_v2"
         ;;
         Adaptec )
             raid_type='adaptec'
@@ -353,13 +353,17 @@ _install_raid_tools()
 
             # Select arcconf version dpending on controller version
             case $adaptec_version in
-                # Old Adaptec controller (2xxx-5xxx) - need to use old arcconf
+                # Old Adaptec controller (2xxx-5xxx) - Adaptec Storage Manager v7
                 *[2-5][0-9][0-9][0-9] )
                     dl_path="${repo_path}/raid_monitoring_tools/arcconf${arch}_old"
                 ;;
-                # Newer Adaptec controller (6xxx-8xxx) - new version of arcconf
+                # Newer Adaptec controller (6xxx-8xxx) - arcconf v2
                 *[6-8][0-9][0-9][0-9] )
-                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_new"
+                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_v2"
+                ;;
+                # Even newer Adaptec controller (SmartRAID 31xx) - arcconf v3
+                *SmartRAID*31[0-9][0-9]* )
+                    dl_path="${repo_path}/raid_monitoring_tools/arcconf_v3"
                 ;;
                 # Otherwise exit
                 * )
@@ -573,40 +577,57 @@ _set_smartd()
             lines+=('DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)')
         ;;
         adaptec )
-            # Try to load sg module if it is not loaded for some reason
-            if [[ ! -c /dev/sg0 ]]; then
-                # Catch error in variable
-                if IFS=$'\n' result=( $(modprobe sg 2>&1) ); then
-                    _echo_tabbed "Loaded ${TXT_YLW}sg${TXT_RST} module."
+            # For older controllers (aacraid)
+            if [[ -d '/sys/bus/pci/drivers/aacraid' ]]; then
+                # Try to load sg module if it is not loaded for some reason
+                if [[ ! -c /dev/sg0 ]]; then
+                    # Catch error in variable
+                    if IFS=$'\n' result=( $(modprobe sg 2>&1) ); then
+                        _echo_tabbed "Loaded ${TXT_YLW}sg${TXT_RST} module."
 
-                # And output it, if we had nonzero exit code
-                else
-                    echo
-                    for (( i=0; i<${#result[@]}; i++ )); do
-                        echo "${result[i]}";
-                    done
-                    _echo_tabbed "Failed to load ${TXT_YLW}sg${TXT_RST} module. We need it to work with Adaptec controller."
+                    # And output it, if we had nonzero exit code
+                    else
+                        echo
+                        for (( i=0; i<${#result[@]}; i++ )); do
+                            echo "${result[i]}";
+                        done
+                        _echo_tabbed "Failed to load ${TXT_YLW}sg${TXT_RST} module. We need it to work with Adaptec controller."
+                        return 1
+                    fi
+                fi
+
+                # Get drives to check
+                local sgx=''
+                for sgx in /dev/sg?; do
+                    if smartctl -q silent -i "$sgx"; then
+                        drives+=("$sgx")
+                    fi
+                done
+
+                if [[ ${#drives[@]} -eq 0 ]]; then
+                    _echo_tabbed "Failed to get ${TXT_YLW}/dev/sg?${TXT_RST} drives for Adaptec controller. We have tried ${TXT_YLW}modprobe sg${TXT_RST} but without success. Check it and proceed manually."
                     return 1
                 fi
-            fi
 
-            # Get drives to check
-            local sgx=''
-            for sgx in /dev/sg?; do
-                if smartctl -q silent -i "$sgx"; then
-                    drives+=("$sgx")
+                # Form smartd rules
+                for drive in "${drives[@]}"; do
+                    lines+=("$drive -n standby -s (S/../.././02|L/../../7/03)")
+                done
+            # For newer controllers (smartpqi)
+            elif [[ -d '/sys/bus/pci/drivers/smartpqi' ]]; then
+                # Get drives to check
+                mapfile -t < <( arcconf getconfig 1 pd  | grep 'Reported Location' | sed -e 's/^.*Slot \([0-9]\).*/\1/g' -e 's/^.*Device \([0-9]\).*/\1/g' ) drives
+
+                if [[ ${#drives[@]} -eq 0 ]]; then
+                    _echo_tabbed "Failed to get drives for Adaptec controller. Try to call ${TXT_YLW}arcconf getconfig 1 pd  | grep 'Reported Location'${TXT_RST} and check the output."
+                    return 1
                 fi
-            done
 
-            if [[ ${#drives[@]} -eq 0 ]]; then
-                _echo_tabbed "Failed to get ${TXT_YLW}/dev/sg?${TXT_RST} drives for Adaptec controller. We have tried ${TXT_YLW}modprobe sg${TXT_RST} but without success. Check it and proceed manually."
-                return 1
+                # Form smartd rules
+                for drive in "${drives[@]}"; do
+                    lines+=("/dev/sda -d cciss,$drive -n standby -s (S/../.././02|L/../../7/03)")
+                done
             fi
-
-            # Form smartd rules
-            for drive in "${drives[@]}"; do
-                lines+=("$drive -n standby -s (S/../.././02|L/../../7/03)")
-            done
         ;;
         lsi )
             # Get drives to check
