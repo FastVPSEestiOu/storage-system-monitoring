@@ -615,15 +615,28 @@ sub get_ssd_smart_info{
        $smart_result = `$smartctl -a  -d sat+megaraid,$disk_number /dev/sda`;
     }else{
         my $adapctec_device_quantity = shift;
-        my $sg_number=$disk_number+$adapctec_device_quantity;
+        
+        # Using cciss mode for new Adaptec with smartpqi driver
+        if ( -d '/sys/bus/pci/drivers/smartpqi' ) {
+		    my $smart_info = `$smartctl -i -d cciss,$disk_number /dev/sda`;
+            if ($smart_info =~ /Product:\s+LogicalDrv/) {
+		    	return 0;
+		    } else {
+            	$smart_result = `$smartctl -a -d cciss,$disk_number /dev/sda`;
+    	    	return "$smart_result\n";
+		    }
+        # And using sg mode for Adaptec with aacraid driver
+        }elsif ( -d '/sys/bus/pci/drivers/aacraid' ) {
+            my $sg_number=$disk_number+$adapctec_device_quantity;
 
-		my $smart_info = `$smartctl -i /dev/sg$sg_number`;
-        if ($smart_info =~ /Product:\s+LogicalDrv/) {
-			return 0;
-		} else {
-        	$smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
-    		return "$smart_result\n";
-		}
+		    my $smart_info = `$smartctl -i /dev/sg$sg_number`;
+            if ($smart_info =~ /Product:\s+LogicalDrv/) {
+		    	return 0;
+		    } else {
+            	$smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
+    	    	return "$smart_result\n";
+		    }
+        }
 	}
 }
 
