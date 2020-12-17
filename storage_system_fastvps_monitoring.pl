@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Configuration.
-my $VERSION = "1.2";
+my $VERSION = "1.3";
 my $PATH = $ENV{'PATH'};
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
@@ -149,7 +149,7 @@ sub which {
 # Deleting space symbols.
 sub rtrim {
     my $string = shift;
-    
+
     $string =~ s/\s+$//g;
     return $string;
 }
@@ -157,14 +157,14 @@ sub rtrim {
 # Get full path to device.
 sub get_device_path {
     my $name = shift;
-    
+
     return "/dev/$name";
 }
 
 # Get major_id for block devices in Linux.
 sub get_major {
     my $device = shift;
- 
+
     my $device_path = get_device_path($device);
     my $major = '';
 
@@ -187,7 +187,7 @@ sub get_major {
 
 sub in_array {
     my ($elem, @array) = @_;
-    
+
     return scalar grep { $elem eq $_ } @array;
 }
 
@@ -277,19 +277,19 @@ sub find_disks_without_parted {
 
         # Skip idrac devices.
         if ( $model =~ m/^idrac\s+virtual\s+\w+$/ ) {
-           	next;
+            next;
         }
-        
+
         # Skip ipmi devices.
         if ( $model =~ m/^ipmi\s+virtual\s+\w+$/ ) {
-           	next;
+            next;
         }
 
         # Skip ami virtual devices.
         if ( $model =~ m/^ami\s+virtual\s+\w+$/ ) {
                 next;
         }
-        
+
         # Skip qemu devices.
         if ( $model =~ m/.+qemu.+/ ) {
             next;
@@ -323,7 +323,7 @@ sub find_disks_without_parted {
         }
 
         # LSI (3ware) / DELL PERC (LSI chips also)
-        if ($model =~ m/lsi/i or $model =~ m/PERC/i) {
+        if ($model =~ m/lsi/i or $model =~ m/PERC/i or $model =~ m/RS3DC080/i) {
             $model = 'lsi';
             $is_raid = 1;
         }
@@ -351,7 +351,7 @@ sub check_disk_utilities {
         if ($storage->{model} eq "adaptec") {
             $adaptec_needed = 1;
 
-            $arcconf = which("arcconf", $PATH);            
+            $arcconf = which("arcconf", $PATH);
             unless ($arcconf) {
                 die "Adaptec utility not found. Please, install Adaptech raid management utility.\n";
             }
@@ -360,7 +360,7 @@ sub check_disk_utilities {
         if ($storage->{model} eq "lsi") {
             $lsi_needed = 1;
 
-            $megacli= which("megacli", $PATH);   
+            $megacli= which("megacli", $PATH);
             unless ($megacli) {
                 die "Megacli not found. Please, install LSI MegaCli raid management utility into.\n";
             }
@@ -432,7 +432,7 @@ sub extract_mdadm_raid_status {
 # Run disgnostic utility for each disk
 sub diag_disks {
     my (@disks) = @_;
-    
+
     my @result_disks = ();
     my @lsi_ld_all;
     my @adaptec_ld_all;
@@ -526,9 +526,9 @@ sub get_smart_disk{
     my $adapctec_device_quantity = shift;
 
     my %pd_type;
+    my %pd_smart;
     my @disk_hwraid_type_number;
     my @disk_raid_list;
-    my $smart_result;
     my $smart_all_result;
     my ($device_name, $device_size, $model, $diag);
 
@@ -537,6 +537,8 @@ sub get_smart_disk{
         my $res = `$megacli -LdpdInfo -a0 -NoLog|grep -E 'Device Id:|Inquiry Data:|PD Type:' `;
         $res =~ s/\nPD Type/ PD Type/g;
         $res =~ s/\nInquiry/ Inquiry/g;
+
+        my $smart_result;
 
         for(split(/\n/,$res)){
             if(/ SSD /){
@@ -547,17 +549,28 @@ sub get_smart_disk{
             my $pd = $1;
             s/Device Id: //;
             s/ PD Type.*//;
+
+            if ($pd =~ /SAS/) {
+                $smart_result = `$smartctl -a  -d megaraid,$_ /dev/sda`;
+            } else {
+                $smart_result = `$smartctl -a  -d sat+megaraid,$_ /dev/sda`;
+            }
+
             push @disk_hwraid_type_number,$_;
             $pd_type{$_} = $pd;
+            $pd_smart{$_} = $smart_result;
         }
-    }elsif( $raid_control =~ /adaptec/){
-        my $res=`$arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD|SES2" | sed 's/  //g'`;
-        $res =~ s/\n Transfer/ Transfer/g;
-        $res =~ s/\n SSD/ SSD/g;
-        $res =~ s/\n Type/ Type/g;
 
+    }elsif( $raid_control =~ /adaptec/){
+        my $disk_number;
+        my $disk_channel;
+        my $disk_connector;
+        my $smart_result;
+
+        my $res=`arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD|SES2|Channel|Location" | sed 's/  //g'`;
+        $res =~ s/\n (Transfer|SSD|Type|Reported)/ $1/g;
         for(split(/\n/,$res)){
-            # Skip SES2 devices
+           # Skip SES2 devices
             if (/ SES2/){
                 next;
             }
@@ -565,32 +578,37 @@ sub get_smart_disk{
                 s/ SATA / SSD /;
             }
             chomp($_);
+
+            /Device #(\d+)/;
+            $disk_number = $1;
+
+            /Reported Channel,Device\(T:L\) : (\d+)/;
+            $disk_channel = $1;
+
+            /Reported Location: Connector (\d)/;
+            $disk_connector = $1;
+
             if (/Device #(\d+) Transfer Speed : (\w+) / ) {
-                push @disk_hwraid_type_number,$1;
-                $pd_type{$1} = $2;
+                $pd_type{$disk_number} = $2;
             } else {
-                /Device #(\d+)\s+/;
-                push @disk_hwraid_type_number,$1;
-                $pd_type{$1} = "SAS";
+                $pd_type{$disk_number} = "SAS";
             }
+
+            push @disk_hwraid_type_number,$disk_number;
+            $pd_smart{$disk_number} = get_adaptec_disk_smart_info($disk_number, $disk_channel, $disk_connector, $pd_type{$disk_number});
         }
-    }else{
+    } else {
         warn("It is not LSI or Adaptec - we didnt know to do!\n");
     }
     # Пытаемся получить smart-ы для каждого найденного в raid-е диска.
     for my $disk_number (@disk_hwraid_type_number) {
-        if ($pd_type{$disk_number} =~ /SAS/) {
-            $smart_result = get_sas_smart_info($disk_number, $raid_control, $adapctec_device_quantity);
-        } else {
-            $smart_result = get_ssd_smart_info($disk_number, $raid_control, $adapctec_device_quantity);
+        unless ($pd_smart{$disk_number}) {
+            next;
         }
-		unless ($smart_result) {
-			next;
-		}
         $device_name = $disk_number;
         $model = $raid_control;
-        $diag = $smart_result;
-    # Данный хэш нужен, чтобы данные о каждом диске, добавлялись в общий массив.
+        $diag = $pd_smart{$disk_number};
+        # Данный хэш нужен, чтобы данные о каждом диске, добавлялись в общий массив.
         my $tmp_disk = {
             "device_name" => $device_name,
             "size"        => 'undefined',
@@ -604,55 +622,41 @@ sub get_smart_disk{
     return @disk_raid_list;
 }
 
-#Получаем и НЕ парсим инфу с SSD диска
-sub get_ssd_smart_info{
+sub get_adaptec_disk_smart_info {
     my $disk_number = shift;
-    my $hw_raid = shift;
+    my $disk_channel = shift;
+    my $disk_connector = shift;
+    my $disk_type = shift;
 
     my $smart_result;
 
-    if ($hw_raid eq "lsi"){
-       $smart_result = `$smartctl -a  -d sat+megaraid,$disk_number /dev/sda`;
-    }else{
-        my $adapctec_device_quantity = shift;
-        
-        # Using cciss mode for new Adaptec with smartpqi driver
-        if ( -d '/sys/bus/pci/drivers/smartpqi' ) {
-		    my $smart_info = `$smartctl -i -d cciss,$disk_number /dev/sda`;
-            if ($smart_info =~ /Product:\s+LogicalDrv/) {
-		    	return 0;
-		    } else {
-            	$smart_result = `$smartctl -a -d cciss,$disk_number /dev/sda`;
-    	    	return "$smart_result\n";
-		    }
-        # And using sg mode for Adaptec with aacraid driver
-        }elsif ( -d '/sys/bus/pci/drivers/aacraid' ) {
-            my $sg_number=$disk_number+$adapctec_device_quantity;
+    my $adapctec_device_quantity = `$arcconf getconfig 1 ld 2>&1 | grep -c 'Logical Device number'`;
+    my $sg_number=$disk_number+$adapctec_device_quantity;
 
-		    my $smart_info = `$smartctl -i /dev/sg$sg_number`;
-            if ($smart_info =~ /Product:\s+LogicalDrv/) {
-		    	return 0;
-		    } else {
-            	$smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
-    	    	return "$smart_result\n";
-		    }
+    # Using cciss mode for new Adaptec with smartpqi driver
+    if ( -d '/sys/bus/pci/drivers/smartpqi' ) {
+        my $smart_info = `$smartctl -i -d cciss,$disk_number /dev/sda`;
+        if ($smart_info =~ /Product:\s+LogicalDrv/) {
+            return 0;
+        } else {
+            $smart_result = `$smartctl -a -d cciss,$disk_number /dev/sda`;
         }
-	}
-}
-
-#Получаем и НЕ парсим инфу с SAS диска
-sub get_sas_smart_info{
-    my $disk_number = shift;
-    my $hw_raid = shift;
-
-    my $smart_result;
-
-    if ($hw_raid eq "lsi"){
-        $smart_result=`$smartctl -a  -d megaraid,$disk_number /dev/sda`;
-    }else{
-        my $adapctec_device_quantity = shift;
-        my $sg_number=$disk_number+$adapctec_device_quantity;
-        $smart_result=`$smartctl -a  /dev/sg$sg_number`;
+    # And using sg mode for Adaptec with aacraid driver
+    } elsif ( -d '/sys/bus/pci/drivers/aacraid' ) {
+        if ( -c "/dev/sg$sg_number" ) {
+            my $smart_info = `$smartctl -i /dev/sg$sg_number`;
+            if ($smart_info =~ /Product:\s+LogicalDrv/) {
+                return 0;
+            } else {
+                if ( $disk_type =~ /SAS/) {
+                    $smart_result=`$smartctl -a  /dev/sg$sg_number`;
+                } else {
+                    $smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
+                }
+            }
+        } else {
+             $smart_result=`$smartctl -d aacraid,$disk_channel,$disk_connector,$disk_number -a  /dev/sda`;
+        }
     }
     return "$smart_result\n";
 }
@@ -660,7 +664,7 @@ sub get_sas_smart_info{
 # Send disks diag results
 sub send_disks_results {
     my (@disks) = @_;
-    
+
     my $request_data = {
         'storage_devices' => \@disks,
         'version'         => $VERSION,
