@@ -574,7 +574,7 @@ _set_smartd()
     # Select smartd.conf for our RAID type
     case $raid_type in
         soft )
-            lines+=('DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)')
+            lines+=('DEVICESCAN -d nvme -d removable -n standby -s (S/../.././02|L/../../7/03)')
         ;;
         adaptec )
             # For older controllers (aacraid)
