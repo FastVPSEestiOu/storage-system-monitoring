@@ -726,7 +726,7 @@ _enable_smartd_autostart()
 	                \( -name "smartd.service" -or -name "smartmontools.service" \) \
 			-exec basename \{\} \; |\
 			uniq |\
-			xargs systemctl enable --now'
+			xargs systemctl enable'
         ;;
         # chkconfig on CentOS 6
         CentOS6 )
