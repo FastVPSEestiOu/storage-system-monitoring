@@ -176,7 +176,7 @@ _select_os_type()
         Debian[6-7] )
             os_type='deb_old'
         ;;
-        Debian[8-9]|Debian10|Ubuntu* )
+        Debian[8-9]|Debian1[0-1]|Ubuntu* )
             os_type='deb'
         ;;
         CentOS6 )
@@ -677,7 +677,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[01] )
+        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[01] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -720,7 +720,7 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian10|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[01] )
+        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[01] )
             enable_cmd='find /usr/lib/systemd/system/ /lib/systemd/system/ /etc/systemd/system/ \
 	                -type f \
 	                \( -name "smartd.service" -or -name "smartmontools.service" \) \
