@@ -94,12 +94,17 @@ Device /dev/md3 with type: raid model: md in state: clean detected
 ### Ручная установка
 
 #### При наличии аппаратного контроллера необходимо установить ПО для работы с ним
-- Для **Adaptec** нужно выбрать ПО, соответствующее модели контроллера. Обычно для контроллеров 6-ой серии и новее используется новая версия. Она есть только для 64-битных ОС. [Список поддерживаемых контроллеров](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v2_05_22932_zip.php).
+- Для **Adaptec** нужно выбрать ПО, соответствующее модели контроллера. Обычно для контроллеров 6-ой серии и новее используются версии утилиты v2 и v3. Они есть только для 64-битных ОС. 
+  [Список поддерживаемых контроллеров утилитой v2](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v2_05_22932_zip.php).
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_new --output-document=/usr/local/bin/arcconf
+wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_v2 --output-document=/usr/local/bin/arcconf
 chmod +x /usr/local/bin/arcconf
 ```
-
+ [Список поддерживаемых контроллеров утилитой v2](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v3_00_23488_zip.php).
+```bash
+wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_v3 --output-document=/usr/local/bin/arcconf
+chmod +x /usr/local/bin/arcconf
+```
 - Для более старых контроллеров используется старая версия ПО, и необходимо выбрать соотествующую ОС разрядность. [Список поддерживаемых контроллеров](https://storage.microsemi.com/en-us/speed/raid/storage_manager/asm_linux_x64_v7_31_18856_tgz.php).
 ```bash
 # 64-bit OS
