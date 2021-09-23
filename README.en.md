@@ -94,9 +94,14 @@ Device /dev/md3 with type: raid model: md in state: clean detected
 ### Manual installation
 
 #### If you have hardware RAID controller installed, you will need to install software to work with it
-- For **Adaptec** controllers you need to select software version according to the controller model. Normally you need the new version for 6 series controllers. It is only available for 64-bit OS. [Link with the list of controllers supported](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v2_05_22932_zip.php).
+- For **Adaptec** controllers you need to select software version according to the controller model. Normally v2 and v3 utility versions are used for 6-series controllers and newer. It is only available for 64-bit OS. [List of supported controllers by the v2 utility](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v2_05_22932_zip.php).
 ```bash
-wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_new --output-document=/usr/local/bin/arcconf
+wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_v2 --output-document=/usr/local/bin/arcconf
+chmod +x /usr/local/bin/arcconf
+```
+[List of supported controllers by the v3 utility](https://storage.microsemi.com/en-us/speed/raid/storage_manager/arcconf_v3_00_23488_zip.php).
+```bash
+wget --no-check-certificate https://raw.githubusercontent.com/FastVPSEestiOu/storage-system-monitoring/master/raid_monitoring_tools/arcconf_v3 --output-document=/usr/local/bin/arcconf
 chmod +x /usr/local/bin/arcconf
 ```
 
