@@ -543,7 +543,7 @@ _set_cron()
 
     local cron_text=''
 
-    local cron_line="$cron_minutes * * * * root $script_local --cron >/dev/null 2>&1"
+    local cron_line="$cron_minutes * * * * root export LC_ALL=C && $script_local --cron >/dev/null 2>&1"
 
     read -r -d '' cron_text <<EOF
 $cron_header
