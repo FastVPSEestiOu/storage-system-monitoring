@@ -45,8 +45,8 @@ SMARTD_HEADER="# smartd.conf by FastVPS
 # Discover disks and run short tests every day at 02:00 and long tests every sunday at 03:00"
 
 # Stable smartctl version (SVN revision)
-SMARTCTL_STABLE_VERSION='6.6'
-SMARTCTL_STABLE_REVISION='4318'
+SMARTCTL_STABLE_VERSION='7.2'
+SMARTCTL_STABLE_REVISION='5155'
 
 # Smartd config path
 declare -A SMARTD_CONF_FILE
