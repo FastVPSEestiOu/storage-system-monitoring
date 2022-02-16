@@ -554,6 +554,15 @@ EOF
     chmod 644 -- "$cron_file"
 }
 
+# Detect NVMe (for smartd config)
+_detect_nvme()
+{
+    if [[ -b /dev/nvme0n1 ]]; then
+        return 0;
+    else
+        return 1;
+    fi
+}
 
 # Configure SMARTD
 _set_smartd()
@@ -574,7 +583,11 @@ _set_smartd()
     # Select smartd.conf for our RAID type
     case $raid_type in
         soft )
-            lines+=('DEVICESCAN -d nvme -d removable -n standby -s (S/../.././02|L/../../7/03)')
+            if _detect_nvme; then
+                lines+=('DEVICESCAN -d nvme -d removable -n standby -s (S/../.././02|L/../../7/03)')
+            else
+                lines+=('DEVICESCAN -d removable -n standby -s (S/../.././02|L/../../7/03)')
+            fi
         ;;
         adaptec )
             # For older controllers (aacraid)
