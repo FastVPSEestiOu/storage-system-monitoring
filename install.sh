@@ -31,7 +31,7 @@ SCRIPT_NAME='storage_system_fastvps_monitoring.pl'
 # Path of our cron task
 CRON_FILE='/etc/cron.d/storage-system-monitoring-fastvps'
 
-# Static header for our cron task 
+# Static header for our cron task
 CRON_HEADER='# FastVPS disk monitoring tool
 # https://github.com/FastVPSEestiOu/storage-system-monitoring
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
@@ -103,7 +103,7 @@ _echo_FAIL()
 _echo_tabbed()
 {
     local message=$1
-    
+
     echo -e " -> $message"
 }
 
@@ -182,7 +182,7 @@ _select_os_type()
         CentOS6 )
             os_type='rpm_old'
         ;;
-        CentOS[7-8] )
+        CentOS[7-8]|AlmaLinux8|Rocky8 )
             os_type='rpm_new'
         ;;
         * )
@@ -219,10 +219,10 @@ _install_deps()
         _echo_tabbed "Installing: ${TXT_YLW}${pkgs_to_install[*]}${TXT_RST} ..."
 
         # Check if we are going to break something
-	    mapfile -t < <( eval "${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}" ) result
+        mapfile -t < <( eval "${PKG_INSTALL_TEST[$os_type]}" "${pkgs_to_install[@]}" ) result
         for (( i=0; i<${#result[@]}; i++ )); do
             if [[ "${result[i]}" =~ ${PKG_UNSAFE[$os_type]} ]]; then
-		        unsafe_pkgs+=("${result[i]}")
+                unsafe_pkgs+=("${result[i]}")
             fi
         done
 
@@ -447,7 +447,7 @@ _install_smartctl()
     # We'll get exit code 2 if current version is lower than stable version
     _version_copmare "$smartctl_current_version" "$smartctl_stable_version"
     version_comp_result=$?
-    
+
     if [[ "$version_comp_result" -eq "2" ]] || [[ "$smartctl_current_revision" -lt "$smartctl_stable_revision" ]]; then
         if _dl_and_check "$dl_path" "$util_path"; then
             chmod +x "$util_path"
@@ -667,12 +667,12 @@ $smartd_header
 ${lines[*]}
 EOF
 
-    if mv "$smartd_conf_file" "$smartd_conf_backup"; then 
+    if mv "$smartd_conf_file" "$smartd_conf_backup"; then
         _echo_tabbed "Moved ${TXT_YLW}${smartd_conf_file}${TXT_RST} to ${TXT_YLW}${smartd_conf_backup}${TXT_RST}"
     else
         return 1
     fi
-    
+
     if echo "$smartd_conf" > "$smartd_conf_file"; then
         _echo_tabbed "Filled ${TXT_YLW}${smartd_conf_file}${TXT_RST}"
         return 0
@@ -690,7 +690,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[0-2] )
+        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|AlmaLinux8|Rocky8|Ubuntu1[6789]|Ubuntu2[0-2] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -733,13 +733,13 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|Ubuntu1[6789]|Ubuntu2[0-2] )
+        Debian[8-9]|Debian1[0-1]|CentOS[7-8]|AlmaLinux8|Rocky8|Ubuntu1[6789]|Ubuntu2[0-2] )
             enable_cmd='find /usr/lib/systemd/system/ /lib/systemd/system/ /etc/systemd/system/ \
-	                -type f \
-	                \( -name "smartd.service" -or -name "smartmontools.service" \) \
-			-exec basename \{\} \; |\
-			uniq |\
-			xargs systemctl enable'
+                    -type f \
+                    \( -name "smartd.service" -or -name "smartmontools.service" \) \
+            -exec basename \{\} \; |\
+            uniq |\
+            xargs systemctl enable'
         ;;
         # chkconfig on CentOS 6
         CentOS6 )
