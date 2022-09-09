@@ -16,9 +16,11 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - [Manual install](#manual-installation).
 
 ### Which operating systems are supported:
-- Debian: 6 / 7 / 8 / 9 / 10
+- Debian: 6 / 7 / 8 / 9 / 10 / 11
+- AlmaLinux: 8
 - Centos: 6 / 7 / 8
-- Ubuntu: 12.04 / 14.04 / 16.04 / 18.04 / 20.04
+- Rocky: 8
+- Ubuntu: 12.04 / 14.04 / 16.04 / 18.04 / 20.04 / 22.04
 
 ### Is this script safe?
 - The script works via an ecrypted channel (https, ssl)
@@ -165,7 +167,7 @@ for drive in $(megacli -pdlist -a0| awk '/Device Id/ {print $NF}'); do
 done
 ```
 
-#### Debian 8/9/10, Ubuntu 16.04/18.04/20.04
+#### Debian 8/9/10/11, Ubuntu 16.04/18.04/20.04/22.04
 ```bash
 apt-get update -qq && apt-get install wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl
 
@@ -199,7 +201,7 @@ chmod 644 /etc/cron.d/storage-system-monitoring-fastvps
 update-rc.d smartmontools defaults
 ```
 
-#### CentOS 7/8
+#### CentOS 7/8, AlmaLinux 8, Rocky 8
 ```bash
 yum install -q -y wget libstdc++ smartmontools perl-Crypt-SSLeay perl-libwww-perl perl-JSON perl-LWP-Protocol-https
 
