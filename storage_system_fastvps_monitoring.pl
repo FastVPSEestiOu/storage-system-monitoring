@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Configuration.
-my $VERSION = "1.3";
+my $VERSION = "1.4";
 my $PATH = $ENV{'PATH'};
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
@@ -568,10 +568,13 @@ sub get_smart_disk{
         my $smart_result;
 
         my $res=`arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD|SES2|Channel|Location" | sed 's/  //g'`;
-        $res =~ s/\n (Transfer|SSD|Type|Reported)/ $1/g;
+        $res =~ s/\n ?(Transfer|SSD|Type|Reported)/ $1/g;
         for(split(/\n/,$res)){
            # Skip SES2 devices
             if (/ SES2/){
+                next;
+            }
+            if (/ Model|Channel #\d:/){
                 next;
             }
             if (/ Yes /){
@@ -630,7 +633,7 @@ sub get_adaptec_disk_smart_info {
 
     my $smart_result;
 
-    my $adapctec_device_quantity = `$arcconf getconfig 1 ld 2>&1 | grep -c 'Logical Device number'`;
+    my $adapctec_device_quantity = `$arcconf getconfig 1 ld 2>&1 | grep -ci 'Logical Device number'`;
     my $sg_number=$disk_number+$adapctec_device_quantity;
 
     # Using cciss mode for new Adaptec with smartpqi driver
