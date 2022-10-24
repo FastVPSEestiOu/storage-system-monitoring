@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Configuration.
-my $VERSION = "1.4";
+my $VERSION = "1.5";
 my $PATH = $ENV{'PATH'};
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
@@ -80,6 +80,8 @@ my $user_id = $<;
 if ( $user_id != 0 ) {
     die "This program can only be run under root.\n";
 }
+
+my $ipaddress = `ip r get 8.8.8.8 | awk 'NR==1 {print \$7}' 2>&1`;
 
 # Get list of devices.
 my @disks = find_disks_without_parted();
@@ -674,10 +676,15 @@ sub send_disks_results {
     };
     # get result
     my $ua = LWP::UserAgent->new();
-    #$ua->agent("FastVPS disk monitoring version $VER
+
+    # add ip in headers
+    $ua->default_header('FASTVPS-IP' => "$ipaddress");
+
     # Allow redirects for POST requests
     push @{ $ua->requests_redirectable }, 'POST';
+
     my $res = $ua->post($API_URL, Content => encode_json($request_data) );
+
     if ($res->is_success) {
         #print "Data sent successfully\n";
         exit 0;
