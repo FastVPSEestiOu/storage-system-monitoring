@@ -18,7 +18,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Configuration.
-my $VERSION = "1.5";
+my $VERSION = '1.6';
 my $PATH = $ENV{'PATH'};
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
@@ -43,7 +43,7 @@ my $json;
 my $help;
 
 # Set locale
-setlocale(LC_ALL, "en_US");
+setlocale(LC_ALL, 'en_US');
 
 # List of device's major_id for ignore.
 my @major_blacklist = (
@@ -81,6 +81,7 @@ if ( $user_id != 0 ) {
     die "This program can only be run under root.\n";
 }
 
+my $os = get_os();
 my $ipaddress = `ip r get 8.8.8.8 | awk 'NR==1 {print \$7}' 2>&1`;
 
 # Get list of devices.
@@ -93,54 +94,53 @@ check_disk_utilities(@disks);
 @disks = diag_disks(@disks);
 
 # If a "--detect" option is specified .
-if ($only_detect_drives) {
-    for my $storage (@disks) {
+if ( $only_detect_drives ) {
+    for my $storage ( @disks ) {
         # The "hard_disk" does not have a "$storage->{status}"
-        if ($storage->{'type'} eq 'hard_disk') {
+        if ( $storage->{'type'} eq 'hard_disk' ) {
             print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} detected\n";
         } else {
             print "Device $storage->{device_name} with type: $storage->{type} model: $storage->{model} in state: $storage->{status} detected\n";
         }
     }
-    if (scalar @disks == 0) {
-        print "I can't find any disk devices. I suppose bug on this platform :(";
+    if ( scalar @disks == 0 ) {
+        print "I can't find any disk devices. I suppose bug on this platform :( ";
     }
     exit (0);
 }
 
 # If a "--cron" option is specified .
-if ($cron_run) {
-    if(!send_disks_results(@disks)) {
+if ( $cron_run ) {
+    if ( !send_disks_results(@disks) ) {
         print "Failed to send storage monitoring data to FastVPS";
         exit(1);
     }
     exit 0;
 }
 
-if ($json) {
+if ( $json ) {
     print_disks_results(@disks);
     exit 0;
 }
 
-if (!$only_detect_drives && !$cron_run) {
+if ( !$only_detect_drives && !$cron_run ) {
     print "This information was gathered and will be sent to FastVPS:\n";
     print "Disks found: " . (scalar @disks) . "\n\n";
 
-    for my $storage (@disks) {
+    for my $storage ( @disks ) {
         print $storage->{device_name} . " is " . $storage->{'type'} . " Diagnostic data:\n";
         print $storage->{'diag'} . "\n\n";
     }
 }
 
 # Functions
-
 sub which {
     my $prog_name   = shift;
     my $path_string = shift;
 
     my @path_array  = split /:/, $PATH;
 
-    for my $path (@path_array) {
+    for my $path ( @path_array ) {
         if ( -x "$path/$prog_name" ) {
             return "$path/$prog_name";
         }
@@ -170,7 +170,7 @@ sub get_major {
     my $device_path = get_device_path($device);
     my $major = '';
 
-    if (-e $device_path) {
+    if ( -e $device_path ) {
         my $rdev = (stat $device_path)[6];
         # https://github.com/quattor/LC/blob/master/src/main/perl/Stat.pm
         $major = ($rdev >> 8) & 0xFF;
@@ -178,7 +178,7 @@ sub get_major {
     } else {
         # Для dm устройств и /dev/t у нас нету псевдо-устройст в /dev, поэтому мы можем попробовать получить major из sysfs
         my $dev_info = file_get_contents("/sys/block/$device/dev");
-        if ($dev_info =~ /(\d+):\d+/) {
+        if ( $dev_info =~ /(\d+):\d+/ ) {
             $major = $1;
             return $major;
         } else {
@@ -208,7 +208,7 @@ sub get_device_vendor {
     my $device_name = shift;
     my $vendor_path = "$sysfs_block_path/$device_name/device/vendor";
 
-    if (-e $vendor_path) {
+    if ( -e $vendor_path ) {
         my $vendor_raw = file_get_contents($vendor_path);
         $vendor_raw = lc($vendor_raw);
         # remove trailing spaces
@@ -224,7 +224,7 @@ sub get_device_model {
     my $device_name = shift;
     my $model_path = "$sysfs_block_path/$device_name/device/model";
 
-    if (-e $model_path) {
+    if ( -e $model_path ) {
         my $model_raw = file_get_contents($model_path);
         $model_raw = lc($model_raw);
         # remove trailing spaces
@@ -239,7 +239,7 @@ sub get_device_size {
     my $device_name = shift;
     my $size_path = "$sysfs_block_path/$device_name/size";
 
-    if (-e $size_path) {
+    if ( -e $size_path ) {
         my $size_in_blocks = file_get_contents($size_path);
         # Convert to bytes.
         my $size_in_bytes = $size_in_blocks << 9;
@@ -256,19 +256,19 @@ sub find_disks_without_parted {
     opendir my $block_devices, $sysfs_block_path or die "Can't open path $sysfs_block_path";
 
     my @disks = ();
-    while (my $block_device = readdir($block_devices)) {
+    while ( my $block_device = readdir($block_devices) ) {
         # skip . and ..
-        if ($block_device =~ m/^\.+$/) {
+        if ( $block_device =~ m/^\.+$/ ) {
             next;
         }
         # skip device mapper fake devices
-        if ($block_device =~ m/^dm-\d+/) {
+        if ( $block_device =~ m/^dm-\d+/ ) {
             next;
         }
 
         # Skip devices if they have major_id from @major_blacklist.
         my $major = get_major($block_device);
-        if (in_array($major, @major_blacklist)) {
+        if ( in_array($major, @major_blacklist) ) {
             next;
         }
 
@@ -289,7 +289,7 @@ sub find_disks_without_parted {
 
         # Skip ami virtual devices.
         if ( $model =~ m/^ami\s+virtual\s+\w+$/ ) {
-                next;
+            next;
         }
 
         # Skip qemu devices.
@@ -305,27 +305,27 @@ sub find_disks_without_parted {
         my $device_size = get_device_size($block_device);
         my $device_name = get_device_path($block_device);
 
-        # detect type (raid or disk)
+        # detect type ( raid or disk )
         my $type = 'disk';
         my $is_raid = '';
         my $raid_level = '';
 
         # adaptec
-        if($model =~ m/adaptec/i or $model =~ m/ASR8405/i) {
+        if ( $model =~ m/adaptec/i or $model =~ m/ASR8405/i ) {
             $model = 'adaptec';
             $is_raid = 1;
         }
 
-        # Linux MD raid (Soft RAID)
-        if ($device_name =~ m/\/md\d+/) {
+        # Linux MD raid ( Soft RAID )
+        if ( $device_name =~ m/\/md\d+/ ) {
             $model = 'md';
             $is_raid = 1;
 
             $raid_level = file_get_contents("/sys/block/$block_device/md/level");
         }
 
-        # LSI (3ware) / DELL PERC (LSI chips also)
-        if ($model =~ m/lsi/i or $model =~ m/PERC/i or $model =~ m/RS3DC080/i) {
+        # LSI ( 3ware ) / DELL PERC ( LSI chips also )
+        if ( $model =~ m/lsi/i or $model =~ m/PERC/i or $model =~ m/RS3DC080/i ) {
             $model = 'lsi';
             $is_raid = 1;
         }
@@ -348,38 +348,38 @@ sub find_disks_without_parted {
 sub check_disk_utilities {
     my (@disks) = @_;
 
-    for my $storage (@disks) {
+    for my $storage ( @disks ) {
         # Adaptec
-        if ($storage->{model} eq "adaptec") {
+        if ( $storage->{model} eq 'adaptec' ) {
             $adaptec_needed = 1;
 
-            $arcconf = which("arcconf", $PATH);
-            unless ($arcconf) {
+            $arcconf = which('arcconf', $PATH);
+            unless ( $arcconf ) {
                 die "Adaptec utility not found. Please, install Adaptech raid management utility.\n";
             }
         }
         # LSI
-        if ($storage->{model} eq "lsi") {
+        if ( $storage->{model} eq "lsi" ) {
             $lsi_needed = 1;
 
-            $megacli= which("megacli", $PATH);
-            unless ($megacli) {
+            $megacli = which('megacli', $PATH);
+            unless ( $megacli ) {
                 die "Megacli not found. Please, install LSI MegaCli raid management utility into.\n";
             }
         }
         # Mdadm
-        if ($storage->{model} eq "md") {
+        if ( $storage->{model} eq "md" ) {
             $mdadm_needed = 1;
 
-            $mdadm = which("mdadm", $PATH);
-            unless ($mdadm) {
+            $mdadm = which('mdadm', $PATH);
+            unless ( $mdadm ) {
                 die "mdadm not found. Please, install mdadm.\n";
             }
         }
     }
 
-    $smartctl = which("smartctl", $PATH);
-    unless ($smartctl) {
+    $smartctl = which('smartctl', $PATH);
+    unless ( $smartctl ) {
         die "smartctl not found. Please, install smartctl.\n"
     }
 }
@@ -391,9 +391,9 @@ sub extract_adaptec_status {
     my @data_as_array = split "\n", $data;
     my $status = 'unknown';
 
-    for my $line (@data_as_array) {
+    for my $line ( @data_as_array ) {
         chomp $line;
-        if ($line =~ /^\s+Status of logical device\s+:\s+(\w+)$/i) {
+        if ( $line =~ /^\s+Status of logical device\s+:\s+(\w+)$/i ) {
             $status = lc(rtrim($1));
         }
     }
@@ -406,9 +406,9 @@ sub extract_lsi_status {
     my @data_as_array = split "\n", $data;
     my $status = 'unknown';
 
-    for my $line (@data_as_array) {
+    for my $line ( @data_as_array ) {
         chomp $line;
-        if ($line =~ /^State\s+:\s+(\w+)/i) {
+        if ( $line =~ /^State\s+:\s+(\w+)/i ) {
             $status = lc(rtrim($1));
         }
     }
@@ -422,9 +422,9 @@ sub extract_mdadm_raid_status {
     my @data_as_array = split "\n", $data;
     my $status = 'unknown';
 
-    for my $line (@data_as_array) {
+    for my $line ( @data_as_array ) {
         chomp $line;
-        if ($line =~ /^\s+State\s+:\s+(.+)$/) {
+        if ( $line =~ /^\s+State\s+:\s+(.+)$/ ) {
             $status = lc(rtrim($1));
         }
     }
@@ -453,7 +453,7 @@ sub diag_disks {
         $adapctec_device_quantity = @{[$adaptec_ld_all_res =~ /Logical device number/gi]};
     }
 
-    foreach my $storage (sort { $a->{'device_name'} cmp $b->{'device_name'} } @disks) {
+    foreach my $storage ( sort { $a->{'device_name'} cmp $b->{'device_name'} } @disks ) {
         my $device_name = $storage->{device_name};
         my $type = $storage->{type};
         my $model = $storage->{model};
@@ -462,37 +462,35 @@ sub diag_disks {
         # Get the status of a raid array.
         my $storage_status = 'undefined';
 
-        if ($type eq 'raid') {
+        if ( $type eq 'raid' ) {
             # adaptec
-            if ($model eq "adaptec") {
-                if (scalar @adaptec_ld_all > 0 ) {
+            if ( $model eq "adaptec" ) {
+                if ( scalar @adaptec_ld_all > 0 ) {
                     $res = shift @adaptec_ld_all;
-                }
-                else {
+                } else {
                     $res = "";
                 }
                 $storage_status = extract_adaptec_status($res);
             }
             # md
-            if ($model eq "md") {
+            if ( $model eq "md" ) {
                 $cmd = "$mdadm --detail $device_name";
                 $res = `$cmd 2>&1`;
                 # Get status from mdadm.
                 $storage_status = extract_mdadm_raid_status($res);
             }
 
-            # lsi (3ware)
-            if($model eq "lsi") {
-                if (scalar @lsi_ld_all > 0) {
+            # lsi ( 3ware )
+            if ( $model eq "lsi" ) {
+                if ( scalar @lsi_ld_all > 0 ) {
                     $res = shift @lsi_ld_all;
-                }
-                else {
+                } else {
                     $res = "";
                 }
                 $storage_status = extract_lsi_status($res);
             }
-        } elsif ($type eq 'hard_disk') {
-            if ($device_name =~ /nvme/i) {
+        } elsif ( $type eq 'hard_disk' ) {
+            if ( $device_name =~ /nvme/i ) {
                 $cmd = "$smartctl -d nvme,0xffffffff --all $device_name";
             } else {
                 $cmd = "$smartctl --all $device_name";
@@ -509,13 +507,13 @@ sub diag_disks {
         push @result_disks, $storage;
     }
 
- # Get smart data for drives from a hardware raid.
- # If raid model is adaptec, additionally specify quantity of virtual arrays.
-    if ($lsi_needed) {
+    # Get smart data for drives from a hardware raid.
+    # If raid model is adaptec, additionally specify quantity of virtual arrays.
+    if ( $lsi_needed ) {
         @hwraid_disk_smart = get_smart_disk('lsi');
         push @result_disks, @hwraid_disk_smart;
-        }
-    if ($adaptec_needed) {
+    }
+    if ( $adaptec_needed ) {
         @hwraid_disk_smart = get_smart_disk('adaptec', $adapctec_device_quantity);
         push @result_disks, @hwraid_disk_smart;
     }
@@ -535,15 +533,15 @@ sub get_smart_disk{
     my ($device_name, $device_size, $model, $diag);
 
 # Получаем номера дисков в raid, и определяем SAS он или нет.
-    if ($raid_control =~ /lsi/){
+    if ( $raid_control =~ /lsi/ ) {
         my $res = `$megacli -LdpdInfo -a0 -NoLog|grep -E 'Device Id:|Inquiry Data:|PD Type:' `;
         $res =~ s/\nPD Type/ PD Type/g;
         $res =~ s/\nInquiry/ Inquiry/g;
 
         my $smart_result;
 
-        for(split(/\n/,$res)){
-            if(/ SSD /){
+        for ( split(/\n/,$res) ) {
+            if (/ SSD /) {
                 s/ SATA / SSD /;
             }
             chomp($_);
@@ -552,7 +550,7 @@ sub get_smart_disk{
             s/Device Id: //;
             s/ PD Type.*//;
 
-            if ($pd =~ /SAS/) {
+            if ( $pd =~ /SAS/ ) {
                 $smart_result = `$smartctl -a  -d megaraid,$_ /dev/sda`;
             } else {
                 $smart_result = `$smartctl -a  -d sat+megaraid,$_ /dev/sda`;
@@ -563,7 +561,7 @@ sub get_smart_disk{
             $pd_smart{$_} = $smart_result;
         }
 
-    }elsif( $raid_control =~ /adaptec/){
+    } elsif ( $raid_control =~ /adaptec/ ) {
         my $disk_number;
         my $disk_channel;
         my $disk_connector;
@@ -571,15 +569,15 @@ sub get_smart_disk{
 
         my $res=`arcconf getconfig 1 pd  | grep -E "Device #|Transfer Speed|SSD|SES2|Channel|Location" | sed 's/  //g'`;
         $res =~ s/\n ?(Transfer|SSD|Type|Reported)/ $1/g;
-        for(split(/\n/,$res)){
+        for( split(/\n/,$res) ) {
            # Skip SES2 devices
-            if (/ SES2/){
+            if ( / SES2/ ) {
                 next;
             }
-            if (/ Model|Channel #\d:/){
+            if ( / Model|Channel #\d:/ ) {
                 next;
             }
-            if (/ Yes /){
+            if ( / Yes / ) {
                 s/ SATA / SSD /;
             }
             chomp($_);
@@ -593,7 +591,7 @@ sub get_smart_disk{
             /Reported Location: Connector (\d)/;
             $disk_connector = $1;
 
-            if (/Device #(\d+) Transfer Speed : (\w+) / ) {
+            if ( /Device #(\d+) Transfer Speed : (\w+) / ) {
                 $pd_type{$disk_number} = $2;
             } else {
                 $pd_type{$disk_number} = "SAS";
@@ -606,8 +604,8 @@ sub get_smart_disk{
         warn("It is not LSI or Adaptec - we didnt know to do!\n");
     }
     # Пытаемся получить smart-ы для каждого найденного в raid-е диска.
-    for my $disk_number (@disk_hwraid_type_number) {
-        unless ($pd_smart{$disk_number}) {
+    for my $disk_number ( @disk_hwraid_type_number ) {
+        unless ( $pd_smart{$disk_number} ) {
             next;
         }
         $device_name = $disk_number;
@@ -641,7 +639,7 @@ sub get_adaptec_disk_smart_info {
     # Using cciss mode for new Adaptec with smartpqi driver
     if ( -d '/sys/bus/pci/drivers/smartpqi' ) {
         my $smart_info = `$smartctl -i -d cciss,$disk_number /dev/sda`;
-        if ($smart_info =~ /Product:\s+LogicalDrv/) {
+        if ( $smart_info =~ /Product:\s+LogicalDrv/ ) {
             return 0;
         } else {
             $smart_result = `$smartctl -a -d cciss,$disk_number /dev/sda`;
@@ -650,17 +648,17 @@ sub get_adaptec_disk_smart_info {
     } elsif ( -d '/sys/bus/pci/drivers/aacraid' ) {
         if ( -c "/dev/sg$sg_number" ) {
             my $smart_info = `$smartctl -i /dev/sg$sg_number`;
-            if ($smart_info =~ /Product:\s+LogicalDrv/) {
+            if ( $smart_info =~ /Product:\s+LogicalDrv/ ) {
                 return 0;
             } else {
-                if ( $disk_type =~ /SAS/) {
-                    $smart_result=`$smartctl -a  /dev/sg$sg_number`;
+                if ( $disk_type =~ /SAS/ ) {
+                    $smart_result = `$smartctl -a  /dev/sg$sg_number`;
                 } else {
                     $smart_result = `$smartctl -a -d sat  /dev/sg$sg_number`;
                 }
             }
         } else {
-             $smart_result=`$smartctl -d aacraid,$disk_channel,$disk_connector,$disk_number -a  /dev/sda`;
+             $smart_result = `$smartctl -d aacraid,$disk_channel,$disk_connector,$disk_number -a  /dev/sda`;
         }
     }
     return "$smart_result\n";
@@ -674,23 +672,97 @@ sub send_disks_results {
         'storage_devices' => \@disks,
         'version'         => $VERSION,
     };
-    # get result
+
+    # Set request params
     my $ua = LWP::UserAgent->new();
 
-    # add ip in headers
+    # Add ip in headers
     $ua->default_header('FASTVPS-IP' => "$ipaddress");
+
+    # Add script version and OS name to User-Agent
+    $ua->agent("storage-system-monitoring-v${VERSION}-${os}");
 
     # Allow redirects for POST requests
     push @{ $ua->requests_redirectable }, 'POST';
 
-    my $res = $ua->post($API_URL, Content => encode_json($request_data) );
+    my $res = $ua->post($API_URL, Content => encode_json($request_data));
 
-    if ($res->is_success) {
+    if ( $res->is_success ) {
         #print "Data sent successfully\n";
         exit 0;
     } else {
         warn "Can't sent data to collector: " . $res->status_line  .  "\n";
         exit 1;
+    }
+}
+
+sub get_os {
+    my @supported_os_list = (
+        'almalinux',
+        'rocky',
+        'centos',
+        'ubuntu',
+        'debian',
+    );
+
+    my $redhat_release = '/etc/redhat-release';
+    my $os_release = '/etc/os-release';
+    my $issue_file = '/etc/issue';
+    my $release_file;
+
+    if ( -e $redhat_release ) {
+        $release_file = $redhat_release;
+    } elsif ( -e $os_release ) {
+        $release_file = $os_release;
+    } elsif ( -e $issue_file ) {
+        $release_file = $issue_file;
+    } else {
+        return 'unknown';
+    }
+
+    my @release_file_content = read_file($release_file);
+    unless ( @release_file_content ) {
+        return 0;
+    }
+
+    for my $os ( @supported_os_list ) {
+        if ( find_string("$os", \@release_file_content) ) {
+            return "$os";
+        } else {
+            next;
+        }
+    }
+
+    return 'unknown';
+}
+
+sub find_string {
+    my $regexp = shift;
+    my $file = shift;
+
+    for my $string ( @$file ) {
+        if ( $string =~ /$regexp/i ) {
+            return $string;
+        } else {
+            next;
+        }
+    }
+
+    return 0;
+}
+
+sub read_file {
+    my $file_path = shift;
+
+    my @file_content;
+
+    if ( open my $fh,"<",$file_path ) {
+        @file_content = <$fh>;
+        close $fh;
+        chomp @file_content;
+        return @file_content;
+    } else {
+        return 0;
     }
 }
 
