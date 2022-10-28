@@ -12,14 +12,16 @@ use warnings;
 
 use POSIX qw(locale_h);
 
-use LWP::UserAgent;
 use JSON;
+use LWP::UserAgent;
 use Data::Dumper;
+
 use Getopt::Long;
 
 # Configuration.
 my $VERSION = '1.6';
 my $PATH = $ENV{'PATH'};
+my $LANG = 'en_US';
 my $API_URL = 'https://fastcheck24.com/api/server-state/storage';
 
 # Diagnostic utilities
@@ -43,7 +45,8 @@ my $json;
 my $help;
 
 # Set locale
-setlocale(LC_ALL, 'en_US');
+$ENV{LC_ALL} = "$LANG";
+setlocale(LC_ALL, "$LANG");
 
 # List of device's major_id for ignore.
 my @major_blacklist = (
