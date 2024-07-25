@@ -690,8 +690,12 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789]|Ubuntu2[0-4] )
+        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789] )
             restart_cmd='systemctl restart smartd.service'
+        ;;
+        # systemctl on new OS
+        Ubuntu2[0-4] )
+            restart_cmd='systemctl restart smartmontools.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
         CentOS6 )
@@ -733,10 +737,19 @@ _enable_smartd_autostart()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789]|Ubuntu2[0-4] )
+        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789] )
             enable_cmd='find /usr/lib/systemd/system/ /lib/systemd/system/ /etc/systemd/system/ \
                     -type f \
                     \( -name "smartd.service" -or -name "smartmontools.service" \) \
+            -exec basename \{\} \; |\
+            uniq |\
+            xargs systemctl enable'
+        ;;
+        # systemctl on new OS
+        Ubuntu2[0-4] )
+            enable_cmd='find /usr/lib/systemd/system/ /lib/systemd/system/ /etc/systemd/system/ \
+                    -type f \
+                    \( -name "smartmontools.service" \) \
             -exec basename \{\} \; |\
             uniq |\
             xargs systemctl enable'
