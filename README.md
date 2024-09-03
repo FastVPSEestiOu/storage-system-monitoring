@@ -14,11 +14,11 @@ wget --no-check-certificate https://raw.github.com/FastVPSEestiOu/storage-system
 - [Manual install](#manual-installation).
 
 ### Which operating systems are supported:
-- Debian: 6 / 7 / 8 / 9 / 10 / 11
+- Debian: 6 / 7 / 8 / 9 / 10 / 11 / 12
 - AlmaLinux: 8
 - Centos: 6 / 7 / 8
 - Rocky: 8
-- Ubuntu: 12.04 / 14.04 / 16.04 / 18.04 / 20.04 / 22.04
+- Ubuntu: 12.04 / 14.04 / 16.04 / 18.04 / 20.04 / 22.04 / 24.04
 
 ### Is this script safe?
 - The script works via an ecrypted channel (https, ssl)
