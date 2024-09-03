@@ -165,7 +165,7 @@ for drive in $(megacli -pdlist -a0| awk '/Device Id/ {print $NF}'); do
 done
 ```
 
-#### Debian 8/9/10/11, Ubuntu 16.04/18.04/20.04/22.04
+#### Debian 8/9/10/11/12, Ubuntu 16.04/18.04/20.04/22.04/24.04
 ```bash
 apt-get update -qq && apt-get install wget libstdc++5 smartmontools liblwp-useragent-determined-perl libnet-https-any-perl libcrypt-ssleay-perl libjson-perl
 
