@@ -747,12 +747,7 @@ _enable_smartd_autostart()
         ;;
         # systemctl on new OS
         Ubuntu2[0-4] )
-            enable_cmd='find /usr/lib/systemd/system/ /lib/systemd/system/ /etc/systemd/system/ \
-                    -type f \
-                    \( -name "smartmontools.service" \) \
-            -exec basename \{\} \; |\
-            uniq |\
-            xargs systemctl enable'
+            enable_cmd='systemctl enable smartmontools.service'
         ;;
         # chkconfig on CentOS 6
         CentOS6 )
