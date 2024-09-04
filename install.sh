@@ -690,7 +690,7 @@ _restart_smartd()
 
     case $os in
         # systemctl on new OS
-        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789]|Ubuntu2[0-2] )
+        Debian[8-9]|Debian1[0-2]|CentOS[7-8]|AlmaLinux[8-9]|Rocky[8-9]|Ubuntu1[6789]|Ubuntu2[0-4] )
             restart_cmd='systemctl restart smartd.service'
         ;;
         # /etc/init.d/ on sysv|upstart OS
@@ -740,6 +740,10 @@ _enable_smartd_autostart()
             -exec basename \{\} \; |\
             uniq |\
             xargs systemctl enable'
+        ;;
+        # systemctl on Ubuntu 24.04
+        Ubuntu24 )
+            enable_cmd='systemctl enable smartmontools.service'
         ;;
         # chkconfig on CentOS 6
         CentOS6 )
